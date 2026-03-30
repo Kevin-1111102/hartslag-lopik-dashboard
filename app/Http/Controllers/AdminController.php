@@ -10,12 +10,20 @@ use Illuminate\View\View;
 class AdminController extends Controller
 {
     /**
-     * Display users list with add form.
+     * Display a listing of users.
      */
     public function index(): View
     {
         $users = User::all();
-        return view('admin.users', compact('users'));
+        return view('admin.users.index', compact('users'));
+    }
+
+    /**
+     * Show the form for creating a new user.
+     */
+    public function create(): View
+    {
+        return view('admin.users.create');
     }
 
     /**
@@ -26,7 +34,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
             'is_admin' => 'boolean',
         ]);
 

@@ -67,40 +67,16 @@
                 </div>
             </div>
 
-            <!-- Add User Form -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-bold mb-6">Nieuwe Gebruiker Toevoegen</h3>
-                    <form method="POST" action="{{ route('admin.users') }}">
-                        @csrf
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required autofocus autocomplete="name" placeholder="Naam" />
-                                <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                            </div>
-                            <div>
-                                <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email')" required autocomplete="username" placeholder="Email" />
-                                <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                            </div>
-                            <div class="md:col-span-2">
-                                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" required autocomplete="new-password" placeholder="Wachtwoord" />
-                                <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="is_admin" value="1" {{ old('is_admin') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="ms-2 text-sm text-gray-900">Is Admin</span>
-                                </label>
-                                <x-input-error :messages="$errors->get('is_admin')" class="mt-2" />
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4 mt-6">
-                            <x-primary-button>{{ __('Toevoegen') }}</x-primary-button>
-                            <a href="{{ route('dashboard') }}" class="text-gray-500 hover:text-gray-700">{{ __('Annuleren') }}</a>
-                        </div>
-                    </form>
-                </div>
+            <!-- Create New User Button -->
+            <div class="mt-6">
+                <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Nieuwe Gebruiker Toevoegen
+                </a>
             </div>
+        </div>
+    </div>
+</div>
+
         </div>
     </div>
 </x-app-layout>
