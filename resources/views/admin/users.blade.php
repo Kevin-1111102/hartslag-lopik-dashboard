@@ -66,15 +66,15 @@
                         </table>
                     </div>
                      <div class="mt-6">
-              <x-primary-button onclick="window.location.href='{{ route('admin.users.create') }}'" class="bg-red-600 hover:bg-green-700 focus:bg-green-700 active:bg-green-800">
+              <x-primary-button onclick="window.location.href='{{ route('admin.users.create') }}'" class="bg-green-600 hover:bg-green-700 focus:bg-green-700 active:bg-green-800">
                 {{ __('Nieuwe Gebruiker Toevoegen') }}
             </x-primary-button>
             </div>
                 </div>
             </div>
 
-           
-           
+
+
         </div>
     </div>
 </div>
