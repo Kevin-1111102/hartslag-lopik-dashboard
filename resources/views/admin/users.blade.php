@@ -46,6 +46,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             @if($user->id !== auth()->id())
+                                                <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-900 mr-4 font-medium">Bewerken</a>
                                                 <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Weet je zeker dat je {{ $user->name }} wilt verwijderen?')">
                                                     @csrf
                                                     @method('DELETE')
@@ -64,15 +65,16 @@
                             </tbody>
                         </table>
                     </div>
+                     <div class="mt-6">
+              <x-primary-button onclick="window.location.href='{{ route('admin.users.create') }}'" class="bg-red-600 hover:bg-green-700 focus:bg-green-700 active:bg-green-800">
+                {{ __('Nieuwe Gebruiker Toevoegen') }}
+            </x-primary-button>
+            </div>
                 </div>
             </div>
 
-            <!-- Create New User Button -->
-            <div class="mt-6">
-                <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    Nieuwe Gebruiker Toevoegen
-                </a>
-            </div>
+           
+           
         </div>
     </div>
 </div>

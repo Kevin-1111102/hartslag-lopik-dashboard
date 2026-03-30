@@ -47,6 +47,39 @@ class AdminController extends Controller
     }
 
     /**
+     * Show the form for editing the specified user.
+     */
+    public function edit(User $user): View
+    {
+        return view('admin.users.edit', compact('user'));
+    }
+
+    /**
+     * Update the specified user.
+     */
+    public function update(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8',
+            'is_admin' => 'boolean',
+        ]);
+
+        $validated['is_admin'] = $validated['is_admin'] ?? false;
+
+        if (!empty($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        $user->update($validated);
+
+        return redirect()->route('admin.users')->with('success', 'Gebruiker bijgewerkt!');
+    }
+
+    /**
      * Delete user.
      */
     public function destroy(User $user): RedirectResponse
