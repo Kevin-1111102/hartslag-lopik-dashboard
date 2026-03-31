@@ -20,12 +20,7 @@ Route::middleware('auth')->group(function () {
 
 // Admin routes
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/users', [AdminController::class, 'index'])->name('users');
-    Route::get('/users/create', [AdminController::class, 'create'])->name('users.create');
-    Route::post('/users', [AdminController::class, 'store']);
-    Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');
-    Route::get('/users/{user}/edit', [AdminController::class, 'edit'])->name('users.edit');
-    Route::patch('/users/{user}', [AdminController::class, 'update'])->name('users.update');
+    Route::resource('users', AdminController::class);
 });
 
 require __DIR__.'/auth.php';

@@ -12,10 +12,14 @@ class AdminController extends Controller
     /**
      * Display a listing of users.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $users = User::all();
-        return view('admin.users', compact('users'));
+        $search = $request->get('search');
+        $users = User::when($search, function ($query) use ($search) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+        })->get();
+        return view('admin.users', compact('users', 'search'));
     }
 
     /**
@@ -43,7 +47,7 @@ class AdminController extends Controller
 
         User::create($validated);
 
-        return redirect()->route('admin.users')->with('success', 'Gebruiker toegevoegd!');
+        return redirect()->route('admin.users.index')->with('success', 'Gebruiker toegevoegd!');
     }
 
     /**
@@ -76,7 +80,7 @@ class AdminController extends Controller
 
         $user->update($validated);
 
-        return redirect()->route('admin.users')->with('success', 'Gebruiker bijgewerkt!');
+        return redirect()->route('admin.users.index')->with('success', 'Gebruiker bijgewerkt!');
     }
 
     /**
@@ -86,12 +90,17 @@ class AdminController extends Controller
     {
         // Prevent self-delete
         if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users')->with('error', 'Kan jezelf niet verwijderen.');
+            return redirect()->route('admin.users.index')->with('error', 'Kan jezelf niet verwijderen.');
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users')->with('success', 'Gebruiker verwijderd!');
+        return redirect()->route('admin.users.index')->with('success', 'Gebruiker verwijderd!');
+    }
+
+    public function show(User $user): View
+    {
+        return view('admin.users.show', compact('user'));
     }
 }
 
