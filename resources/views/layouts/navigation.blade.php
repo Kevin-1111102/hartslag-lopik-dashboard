@@ -12,11 +12,8 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('aeds.index')" :active="request()->routeIs('aeds.*')">
-                        {{ __('Mijn AEDs') }}
                     </x-nav-link>
                     @if(auth()->user()->is_admin)
                     <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
@@ -77,9 +74,6 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('aeds.index')" :active="request()->routeIs('aeds.*')">
-                {{ __('Mijn AEDs') }}
             </x-responsive-nav-link>
             @if(auth()->user()->is_admin)
             <x-responsive-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">

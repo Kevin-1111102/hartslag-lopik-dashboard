@@ -28,10 +28,4 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::patch('/users/{user}', [AdminController::class, 'update'])->name('users.update');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('aeds', \App\Http\Controllers\AedController::class)->except(['destroy']);
-    Route::put('aeds/{aed}/archive', [\App\Http\Controllers\AedController::class, 'archive'])->name('aeds.archive');
-    Route::delete('aeds/{aed}', [\App\Http\Controllers\AedController::class, 'destroy'])->name('aeds.destroy');
-});
-
 require __DIR__.'/auth.php';

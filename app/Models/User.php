@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -44,23 +45,5 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
-    }
-
-    // ====================== Relaties voor AED-systeem ======================
-
-    /**
-     * Een gebruiker (beheerder of vrijwilliger) kan meerdere AED's beheren
-     */
-    public function aeds()
-    {
-        return $this->hasMany(Aed::class);
-    }
-
-    /**
-     * Een gebruiker kan meerdere controles uitvoeren
-     */
-    public function controles()
-    {
-        return $this->hasMany(Controle::class);
     }
 }
