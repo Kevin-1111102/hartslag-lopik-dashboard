@@ -55,7 +55,7 @@
 
                         <div class="flex items-center gap-4 mt-8">
                             <x-primary-button type="submit">{{ __('Gebruiker Bijwerken') }}</x-primary-button>
-                            <a href="{{ route('admin.users.index') }}" class="text-gray-500 hover:text-gray-700 underline">{{ __('Annuleren') }}</a>
+                            <a href="{{ route('admin.users') }}" class="text-gray-500 hover:text-gray-700 underline">{{ __('Annuleren') }}</a>
                         </div>
                     </form>
                 </div>

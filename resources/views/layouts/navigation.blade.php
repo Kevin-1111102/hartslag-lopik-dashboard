@@ -19,7 +19,7 @@
                         {{ __('Mijn AEDs') }}
                     </x-nav-link>
                     @if(auth()->user()->is_admin)
-                    <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                    <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
                         {{ __('Gebruikers') }}
                     </x-nav-link>
                     @endif
@@ -82,7 +82,7 @@
                 {{ __('Mijn AEDs') }}
             </x-responsive-nav-link>
             @if(auth()->user()->is_admin)
-            <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+            <x-responsive-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
                 {{ __('Gebruikers') }}
             </x-responsive-nav-link>
             @endif

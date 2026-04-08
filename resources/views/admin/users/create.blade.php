@@ -25,7 +25,7 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <form method="POST" action="{{ route('admin.users.store') }}">
+                    <form method="POST" action="{{ route('admin.users') }}">
                         @csrf
                         <div class="space-y-6">
                             <div>
@@ -54,7 +54,7 @@
 
                         <div class="flex items-center gap-4 mt-8">
                             <x-primary-button type="submit">{{ __('Gebruiker Toevoegen') }}</x-primary-button>
-                            <a href="{{ route('admin.users.index') }}" class="text-gray-500 hover:text-gray-700 underline">{{ __('Annuleren') }}</a>
+                            <a href="{{ route('admin.users') }}" class="text-gray-500 hover:text-gray-700 underline">{{ __('Annuleren') }}</a>
                         </div>
                     </form>
                 </div>
