@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AedController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -11,6 +12,12 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// AED routes
+Route::resource('aeds', AedController::class)->only(['index', 'show', 'create', 'store', 'destroy'])->middleware(['auth', 'verified']);
+Route::patch('/aeds/{aed}/archive', [AedController::class, 'archive'])->name('aeds.archive')->middleware(['auth', 'verified', 'admin']);
+Route::patch('/aeds/{aed}/unarchive', [AedController::class, 'unarchive'])->name('aeds.unarchive')->middleware(['auth', 'verified', 'admin']);
+Route::get('/aeds/archief/overzicht', [AedController::class, 'archief'])->name('aeds.archief')->middleware(['auth', 'verified']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
