@@ -35,6 +35,7 @@ class Aed extends Model
         'elektroden_vervaldatum',
         'lokaal_contactpersoon',
         'opmerkingen',
+        'cooperation_agreement_path',
         'status',
     ];
 

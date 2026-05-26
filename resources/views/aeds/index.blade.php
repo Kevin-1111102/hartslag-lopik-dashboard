@@ -33,9 +33,9 @@
                 </div>
                 <p class="mb-1"><strong>Eigenaar:</strong> {{ $aed->eigenaar }}</p>
                 <p class="mb-2 text-muted">{{ $aed->adres }} {{ $aed->huisnummer }}</p>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('aeds.show', $aed) }}" class="btn btn-outline-primary btn-sm flex-fill">details</a>
-                    <a href="#" class="btn btn-outline-success btn-sm flex-fill">controle</a>
+                <div class="d-grid gap-2">
+                    <a href="{{ route('aeds.show', $aed) }}" class="btn btn-outline-primary btn-sm">details</a>
+                    <a href="{{ route('aeds.controle.show', $aed) }}" class="btn btn-outline-success btn-sm">controle</a>
                 </div>
             </div>
             @empty
@@ -54,9 +54,11 @@
                 <h1 class="h2 fw-bold">AED Overzicht</h1>
                 <p class="text-muted mb-0">Zoek en beheer alle AED's in de regio</p>
             </div>
-            <button class="btn btn-outline-secondary" >
-                <i class="bi bi-download me-1"></i> aeds exporteren
-            </button>
+            @can('admin')
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="bi bi-download me-1"></i> aeds exporteren
+                </button>
+            @endcan
         </div>
 
     @if (session('success'))
@@ -92,7 +94,7 @@
                             <a href="{{ route('aeds.show', $aed) }}" class="btn btn-outline-primary btn-sm flex-fill">
                                 <i class="bi bi-eye me-1"></i> details
                             </a>
-                            <a href="#" class="btn btn-outline-success btn-sm flex-fill">
+                    <a href="{{ route('aeds.controle.show', $aed) }}" class="btn btn-outline-success btn-sm flex-fill">
                                 <i class="bi bi-check-circle me-1"></i> controle
                             </a>
                         </div>
@@ -109,9 +111,11 @@
 
         {{-- Bottom Buttons --}}
         <div class="d-flex justify-content-between mt-4">
-            <a href="{{ route('aeds.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-lg me-1"></i> nieuwe aed aanmelden
-            </a>
+            @can('admin')
+                <a href="{{ route('aeds.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> nieuwe aed aanmelden
+                </a>
+            @endcan
             <a href="{{ route('aeds.archief') }}" class="btn btn-outline-dark">
                 <i class="bi bi-archive me-1"></i> archief
             </a>

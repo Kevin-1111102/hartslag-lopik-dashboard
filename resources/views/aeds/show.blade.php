@@ -99,15 +99,27 @@
                                 </div>
                             </div>
 
+            {{-- Beheerafspraken --}}
+                                        <div class="card shadow-sm mb-4">
+                                            <div class="card-header bg-primary text-white fw-bold">
+                                                <i class="bi bi-file-earmark-text me-2"></i>DOCUMENT SAMENWERKING
+                                            </div>
+                                            <div class="card-body">
+                                                @if($aed->cooperation_agreement_path)
+            <a class="btn btn-outline-info btn-sm" href="{{ route('aeds.cooperation-agreement.view', $aed) }}" target="_blank" rel="noopener">
+                                                        <i class="bi bi-box-arrow-up-right me-1"></i> Open/Download document
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">Geen samenwerkingsovereenkomst toegevoegd.</span>
+                                                @endif
+                                            </div>
+                                        </div>
+
                             {{-- Beheerafspraken --}}
                             <div class="card shadow-sm">
                                 <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
                                     <span><i class="bi bi-file-text me-2"></i>BEHEERAFSPRAKEN</span>
-                                    @can('admin')
-                                        <button class="btn btn-light btn-sm">
-                                            <i class="bi bi-pencil me-1"></i> bewerken
-                                        </button>
-                                    @endcan
+
                                 </div>
                                 <div class="card-body">
                                     @if($aed->beheerafspraak)
@@ -247,9 +259,13 @@
                                         @if($latestControle->bijzonderheden)
                                             <p class="mb-3"><strong>Bijzonderheden:</strong> {{ $latestControle->bijzonderheden }}</p>
                                         @endif
-                                        <a href="#" class="btn btn-outline-info btn-sm">
+                                        <a href="{{ route('aeds.controle.show', $aed) }}" class="btn btn-outline-primary btn-sm me-2">
+                                            <i class="bi bi-pencil-square me-1"></i> controle invoeren
+                                        </a>
+                                        <a href="{{ route('aeds.controle.history', $aed) }}" class="btn btn-outline-info btn-sm">
                                             <i class="bi bi-clock-history me-1"></i> volledige geschiedenis
                                         </a>
+
                                     @else
                                         <p class="text-muted mb-0">Nog geen controle uitgevoerd.</p>
                                     @endif
@@ -277,13 +293,14 @@
                                     <div class="card-body">
                                         <div class="d-grid gap-2">
 
-                                            <button class="btn btn-outline-secondary">
+                                            <button class="btn btn-outline-secondary" type="button">
                                                 <i class="bi bi-download me-2"></i>exporteren
                                             </button>
 
-                                            <button class="btn btn-outline-secondary">
+                                            <a href="{{ route('aeds.edit', $aed) }}" class="btn btn-outline-secondary">
                                                 <i class="bi bi-pencil me-2"></i>bewerken
-                                            </button>
+                                            </a>
+
 
     @if($aed->status !== 'archief')
                                                 <form method="POST" action="{{ route('aeds.archive', $aed) }}">

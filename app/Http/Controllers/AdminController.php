@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -92,6 +93,39 @@ class AdminController extends Controller
         $user->delete();
 
         return redirect()->route('admin.users')->with('success', 'Gebruiker verwijderd!');
+    }
+
+    /**
+     * Display notifications overview.
+     */
+    public function notifications(): View
+    {
+        $notifications = Notification::query()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        return view('admin.notifications', compact('notifications'));
+    }
+
+    /**
+     * Mark a notification as read.
+     */
+    public function markNotificationRead(Notification $notification): RedirectResponse
+    {
+        $notification->update(['gelezen' => true]);
+
+        return redirect()->back()->with('success', 'Melding gemarkeerd als gelezen.');
+    }
+
+    /**
+     * Mark a notification as unread.
+     */
+    public function markNotificationUnread(Notification $notification): RedirectResponse
+    {
+        $notification->update(['gelezen' => false]);
+
+        return redirect()->back()->with('success', 'Melding gemarkeerd als ongelezen.');
     }
 }
 
