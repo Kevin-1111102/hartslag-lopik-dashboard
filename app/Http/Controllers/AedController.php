@@ -7,6 +7,9 @@ use App\Models\AedBeheerafspraak;
 use App\Models\ControleLog;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreAedRequest;
+use App\Http\Requests\UpdateAedRequest;
+
 use Illuminate\Support\Facades\Storage;
 
 class AedController extends Controller
@@ -35,39 +38,10 @@ class AedController extends Controller
     /**
      * Update the specified AED in storage.
      */
-    public function update(Request $request, Aed $aed)
+    public function update(UpdateAedRequest $request, Aed $aed)
     {
-        $validated = $request->validate([
-            'eigenaar'               => 'required|string|max:255',
-            'contactpersoon'         => 'nullable|string|max:255',
-            'aed_type'               => 'required|string|max:255',
-            'serienummer'            => 'nullable|string|max:255',
-            'adres'                  => 'required|string|max:255',
-            'huisnummer'             => 'required|string|max:50',
-            'plaats'                 => 'required|string|max:255',
-            'beschrijving'           => 'nullable|string',
-            'security'               => 'nullable|string|max:255',
-            'pincode'                => 'nullable|string|max:255',
-            'onderhoudscode'         => 'nullable|string|max:255',
-            'serienummer_kast'       => 'nullable|string|max:255',
-            'serienummer_aed'        => 'nullable|string|max:255',
-            'batterij_vervaldatum'   => 'nullable|date',
-            'elektroden_vervaldatum' => 'nullable|date',
-            'lokaal_contactpersoon'  => 'nullable|string|max:255',
-            'opmerkingen'            => 'nullable|string',
-            'status'                 => 'required|in:actief,inactief,vervangen,archief',
+        $validated = $request->validated();
 
-            'beheerafspraak'         => 'nullable|array',
-            'beheerafspraak.is_beheerder'         => 'boolean',
-            'beheerafspraak.voert_controles_uit'  => 'boolean',
-            'beheerafspraak.beheert_in_hartslagnu' => 'boolean',
-            'beheerafspraak.extern_onderhoud'     => 'boolean',
-
-            // Single AED photo upload
-            'foto' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
-
-            'cooperation_agreement' => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,txt|max:10240',
-        ]);
 
         // Persist scalar columns
         $aed->update($validated);
@@ -155,39 +129,10 @@ class AedController extends Controller
     /**
      * Store a newly created AED in storage.
      */
-    public function store(Request $request)
+    public function store(StoreAedRequest $request)
     {
-        $validated = $request->validate([
-            'eigenaar'               => 'required|string|max:255',
-            'contactpersoon'         => 'nullable|string|max:255',
-            'aed_type'               => 'required|string|max:255',
-            'serienummer'            => 'nullable|string|max:255',
-            'adres'                  => 'required|string|max:255',
-            'huisnummer'             => 'required|string|max:50',
-            'plaats'                 => 'required|string|max:255',
-            'beschrijving'           => 'nullable|string',
-            'security'               => 'nullable|string|max:255',
-            'pincode'                => 'nullable|string|max:255',
-            'onderhoudscode'         => 'nullable|string|max:255',
-            'serienummer_kast'       => 'nullable|string|max:255',
-            'serienummer_aed'        => 'nullable|string|max:255',
-            'batterij_vervaldatum'   => 'nullable|date',
-            'elektroden_vervaldatum' => 'nullable|date',
-            'lokaal_contactpersoon'  => 'nullable|string|max:255',
-            'opmerkingen'            => 'nullable|string',
-            'status'                 => 'required|in:actief,inactief,vervangen,archief',
+        $validated = $request->validated();
 
-            'beheerafspraak'         => 'nullable|array',
-            'beheerafspraak.is_beheerder'         => 'boolean',
-            'beheerafspraak.voert_controles_uit'  => 'boolean',
-            'beheerafspraak.beheert_in_hartslagnu' => 'boolean',
-            'beheerafspraak.extern_onderhoud'     => 'boolean',
-
-            // Single AED photo upload
-            'foto' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
-
-            'cooperation_agreement' => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,txt|max:10240',
-        ]);
 
         $aed = Aed::create($validated);
 
@@ -202,10 +147,11 @@ class AedController extends Controller
         // Store optional photo upload
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('aed-photos', 'public');
-            $aed->update([
-                'photo_path' => $path,
+            $aed->photos()->create([
+                'path' => $path,
             ]);
         }
+
 
         // Create beheerafspraak if any checkbox is checked
         if (!empty($validated['beheerafspraak'])) {
@@ -252,14 +198,17 @@ class AedController extends Controller
      */
     public function controleStore(Request $request, Aed $aed)
     {
-        logger()->warning('controleStore called', [
-            'aed_id' => $aed->id,
-            'user_id' => $request->user()?->id,
-            'request_id' => (string) $request->headers->get('X-Request-Id'),
-            'storing_present' => $request->has('storing'),
-            'storing_value' => $request->input('storing'),
-            'payload_datum' => $request->input('datum'),
-        ]);
+        if (config('app.debug')) {
+            logger()->debug('controleStore called', [
+                'aed_id' => $aed->id,
+                'user_id' => $request->user()?->id,
+                'request_id' => (string) $request->headers->get('X-Request-Id'),
+                'storing_present' => $request->has('storing'),
+                'storing_value' => $request->input('storing'),
+                'payload_datum' => $request->input('datum'),
+            ]);
+        }
+
 
         $validated = $request->validate([
             'datum' => 'required|date',
