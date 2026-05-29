@@ -213,6 +213,85 @@
                             </div>
 
                             <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white fw-bold">
+                                    <i class="bi bi-images me-2"></i>FOTO VAN DE AED
+                                </div>
+                                <div class="card-body">
+                                    @if($aed->photos && $aed->photos->count() > 0)
+                                        @php
+                                            $existingPhoto = $aed->photos->first();
+                                        @endphp
+
+                                        <div class="mb-3">
+                                            <div class="position-relative border rounded p-1 bg-light" style="max-width: 320px;">
+                                                <img
+                                                    src="{{ asset('storage/' . $existingPhoto->path) }}"
+                                                    alt="AED foto"
+                                                    class="img-fluid rounded"
+                                                    style="height: 180px; object-fit: cover; width: 100%;">
+
+                                                <div class="position-absolute top-0 end-0 m-2">
+                                                    <button type="submit"
+                                                        name="remove_photo"
+                                                        value="1"
+                                                        class="btn btn-sm btn-danger rounded-circle photo-remove-btn"
+                                                        style="width: 34px; height: 34px; display:flex; align-items:center; justify-content:center;"
+                                                        aria-label="Verwijder foto"
+                                                        title="Verwijder foto">
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="form-text">Klik op × om deze foto te verwijderen.</div>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-0">
+                                        <label for="foto" class="form-label fw-semibold">Nieuwe foto (optioneel)</label>
+                                        <input type="file"
+                                            class="form-control @error('foto') is-invalid @enderror"
+                                            id="foto"
+                                            name="foto"
+                                            accept="image/*">
+
+                                        <div class="form-text">Laat leeg om de huidige foto te behouden. Als je upload vervangt dit de huidige foto.</div>
+
+                                        @error('foto')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+
+                                        <div class="mt-2">
+                                            <div class="form-text mb-2">
+                                                <strong>Geselecteerd:</strong> <span id="fotoPreviewName" class="text-muted">—</span>
+                                            </div>
+
+                                            <div id="fotoPreview"
+                                                class="position-relative border rounded p-1 bg-light"
+                                                style="max-width: 320px; display: none;">
+
+                                                <img
+                                                    id="fotoPreviewImg"
+                                                    src="#"
+                                                    alt="Preview"
+                                                    class="img-fluid rounded"
+                                                    style="height: 180px; object-fit: cover; width: 100%; display: block;">
+
+                                                <button
+                                                    type="button"
+                                                    id="fotoRemoveBtn"
+                                                    class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle"
+                                                    aria-label="Verwijderen"
+                                                    title="Verwijderen"
+                                                    style="display:block;">
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm mb-4">
                                 <div class="card-header bg-info text-white fw-bold">
                                     <i class="bi bi-file-earmark-text me-2"></i>DOCUMENT SAMENWERKING
                                 </div>
@@ -296,6 +375,56 @@
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const fotoInput = document.getElementById('foto');
+                const fotoPreview = document.getElementById('fotoPreview');
+                const fotoPreviewImg = document.getElementById('fotoPreviewImg');
+                const fotoPreviewName = document.getElementById('fotoPreviewName');
+                const fotoRemoveBtn = document.getElementById('fotoRemoveBtn');
+
+                function hidePreview() {
+                    if (!fotoPreview) return;
+                    fotoPreview.style.display = 'none';
+                    if (fotoPreviewImg) fotoPreviewImg.src = '#';
+                    if (fotoPreviewName) fotoPreviewName.textContent = '—';
+                }
+
+                function showPreview(file) {
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        if (fotoPreviewImg) fotoPreviewImg.src = e.target.result;
+                        if (fotoPreview) fotoPreview.style.display = 'block';
+                        if (fotoPreviewName) fotoPreviewName.textContent = file.name || '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                hidePreview();
+
+                if (fotoInput) {
+                    fotoInput.addEventListener('change', (e) => {
+                        const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+
+                        if (file) {
+                            showPreview(file);
+                        } else {
+                            hidePreview();
+                        }
+                    });
+                }
+
+                if (fotoRemoveBtn) {
+                    fotoRemoveBtn.addEventListener('click', () => {
+                        if (fotoInput) fotoInput.value = '';
+                        hidePreview();
+                    });
+                }
+            });
+        </script>
     @endpush
 </x-app-layout>
 

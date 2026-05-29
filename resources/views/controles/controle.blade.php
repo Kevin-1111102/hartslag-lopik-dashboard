@@ -98,7 +98,7 @@
                                                     </label>
                                                 </div>
 
-                                                <div id="batterij-date-wrap" class="mt-2" style="{{ old('update_batterij_vervaldatum') ? '' : 'display:none;' }}">
+<div id="batterij-date-wrap" class="mt-2 {{ old('update_batterij_vervaldatum') ? '' : 'hidden' }}">
                                                     <label class="form-label">Nieuwe batterij vervaldatum</label>
                                                     <input type="date" class="form-control" name="batterij_vervaldatum" value="{{ old('batterij_vervaldatum', optional($aed->batterij_vervaldatum)->format('Y-m-d')) }}" {{ old('update_batterij_vervaldatum') ? '' : 'disabled' }}>
                                                 </div>
@@ -112,7 +112,7 @@
                                                     </label>
                                                 </div>
 
-                                                <div id="elektroden-date-wrap" class="mt-2" style="{{ old('update_elektroden_vervaldatum') ? '' : 'display:none;' }}">
+<div id="elektroden-date-wrap" class="mt-2 {{ old('update_elektroden_vervaldatum') ? '' : 'hidden' }}">
                                                     <label class="form-label">Nieuwe elektroden vervaldatum</label>
                                                     <input type="date" class="form-control" name="elektroden_vervaldatum" value="{{ old('elektroden_vervaldatum', optional($aed->elektroden_vervaldatum)->format('Y-m-d')) }}" {{ old('update_elektroden_vervaldatum') ? '' : 'disabled' }}>
                                                 </div>
@@ -146,7 +146,7 @@
                 if (!cb || !wrap || !input) return;
 
                 const show = cb.checked;
-                wrap.style.display = show ? '' : 'none';
+wrap.classList.toggle('hidden', !show);
                 input.disabled = !show;
             }
 

@@ -72,10 +72,10 @@
                                                     <span class="text-success fw-bold">✓ In orde</span>
                                                 @endif
                                             </td>
-                                            <td class="text-wrap" style="max-width: 250px;">
+<td class="text-wrap max-w-[250px]">
                                                 {{ $log->bevindingen ?? '-' }}
                                             </td>
-                                            <td class="text-wrap" style="max-width: 300px;">
+<td class="text-wrap max-w-[300px]">
                                                 {{ $log->bijzonderheden ?? '-' }}
                                             </td>
                                         </tr>

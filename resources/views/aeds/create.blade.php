@@ -224,7 +224,65 @@
                                 </div>
                             </div>
 
-{{-- Document samenwerking / afspraken --}}
+                            {{-- Foto's --}}
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white fw-bold">
+                                    <i class="bi bi-images me-2"></i>FOTO VAN DE AED
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="foto" class="form-label fw-semibold">Foto</label>
+                                        <input type="file"
+                                            class="form-control @error('foto') is-invalid @enderror"
+                                            id="foto"
+                                            name="foto"
+                                            accept="image/*">
+
+                                        <div class="form-text">Upload een foto van de AED-kast/omgeving.</div>
+
+                                        @error('foto')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <div class="form-text mb-2">
+                                            <strong>Geselecteerd:</strong> <span id="fotoPreviewName" class="text-muted">—</span>
+                                        </div>
+
+                                        {{-- Container-id toevoegen zodat JS correct kan togglen --}}
+                                        <div id="fotoPreview"
+                                            class="position-relative border rounded p-1 bg-light"
+                                            style="max-width: 260px; display: none;">
+
+                                            <img
+                                                id="fotoPreviewImg"
+                                                src="#"
+                                                alt="Preview"
+                                                class="img-fluid rounded"
+                                                style="height: 170px; object-fit: cover; width: 100%; display: block;">
+
+                                            <button
+                                                type="button"
+                                                id="fotoRemoveBtn"
+                                                class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle"
+                                                aria-label="Verwijderen"
+                                                title="Verwijderen"
+                                                style="display:block;">
+                                                ×
+                                            </button>
+                                        </div>
+
+                                        <div class="form-text mt-1">
+                                            Preview moet hier verschijnen na het kiezen van een bestand.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+                            {{-- Document samenwerking / afspraken --}}
                             <div class="card shadow-sm mb-4">
                                 <div class="card-header bg-info text-white fw-bold">
                                     <i class="bi bi-file-earmark-text me-2"></i>DOCUMENT SAMENWERKING
@@ -317,6 +375,57 @@
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const fotoInput = document.getElementById('foto');
+                const fotoPreview = document.getElementById('fotoPreview');
+                const fotoPreviewImg = document.getElementById('fotoPreviewImg');
+                const fotoPreviewName = document.getElementById('fotoPreviewName');
+                const fotoRemoveBtn = document.getElementById('fotoRemoveBtn');
+
+                function hidePreview() {
+                    if (!fotoPreview) return;
+                    fotoPreview.style.display = 'none';
+                    if (fotoPreviewImg) fotoPreviewImg.src = '#';
+                    if (fotoPreviewName) fotoPreviewName.textContent = '—';
+                }
+
+                function showPreview(file) {
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        if (fotoPreviewImg) fotoPreviewImg.src = e.target.result;
+                        if (fotoPreview) fotoPreview.style.display = 'block';
+                        if (fotoPreviewName) fotoPreviewName.textContent = file.name || '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                // init: standaard verborgen
+                hidePreview();
+
+                if (fotoInput) {
+                    fotoInput.addEventListener('change', (e) => {
+                        const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+
+                        if (file) {
+                            showPreview(file);
+                        } else {
+                            hidePreview();
+                        }
+                    });
+                }
+
+                if (fotoRemoveBtn) {
+                    fotoRemoveBtn.addEventListener('click', () => {
+                        if (fotoInput) fotoInput.value = '';
+                        hidePreview();
+                    });
+                }
+            });
+        </script>
     @endpush
 </x-app-layout>
 

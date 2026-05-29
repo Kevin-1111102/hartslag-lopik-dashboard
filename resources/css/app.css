@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom CSS extracted from Blade views to keep styling consistent */
+body {
+    background-color: #f8f9fa;
+}
+
+.hero-section {
+    padding: 60px 0;
+    border-bottom: 3px solid #dc3545;
+}
+

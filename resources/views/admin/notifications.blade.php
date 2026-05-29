@@ -50,12 +50,12 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width: 110px;">status</th>
-                                            <th style="width: 130px;">Type</th>
-                                            <th style="width: 120px;">AED</th>
+<th class="w-[110px]">status</th>
+<th class="w-[130px]">Type</th>
+<th class="w-[120px]">AED</th>
                                             <th>Bericht</th>
-                                            <th style="width: 120px;">Datum</th>
-                                            <th style="width: 220px;">Actie</th>
+<th class="w-[120px]">Datum</th>
+<th class="w-[220px]">Actie</th>
                                         </tr>
                                     </thead>
                                     <tbody>

@@ -116,6 +116,32 @@
                                         </div>
 
                             {{-- Beheerafspraken --}}
+
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white fw-bold">
+                                    <i class="bi bi-images me-2"></i>FOTO'S VAN DE AED
+                                </div>
+                                <div class="card-body">
+                                    @if($aed->photos && $aed->photos->count() > 0)
+                                        <div class="row g-2">
+                                            @foreach($aed->photos as $photo)
+                                                <div class="col-6 col-md-4">
+                                                    <div class="border rounded p-1 bg-light h-100">
+                                                        <img
+                                                            src="{{ asset('storage/'.$photo->path) }}"
+                                                            alt="AED foto"
+                                                            class="img-fluid rounded"
+                                                            style="height: 140px; object-fit: cover; width: 100%;">
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <p class="text-muted mb-0">Geen foto’s toegevoegd.</p>
+                                    @endif
+                                </div>
+                            </div>
+
                             <div class="card shadow-sm">
                                 <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
                                     <span><i class="bi bi-file-text me-2"></i>BEHEERAFSPRAKEN</span>

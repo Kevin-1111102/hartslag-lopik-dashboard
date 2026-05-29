@@ -69,4 +69,9 @@ class Aed extends Model
     {
         return $this->hasMany(ControleLog::class);
     }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(AedPhoto::class);
+    }
 }

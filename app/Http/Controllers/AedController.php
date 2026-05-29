@@ -9,10 +9,8 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-
 class AedController extends Controller
 {
-
     /**
      * Display a listing of all active AEDs (excluding archived).
      */
@@ -58,21 +56,63 @@ class AedController extends Controller
             'lokaal_contactpersoon'  => 'nullable|string|max:255',
             'opmerkingen'            => 'nullable|string',
             'status'                 => 'required|in:actief,inactief,vervangen,archief',
+
             'beheerafspraak'         => 'nullable|array',
             'beheerafspraak.is_beheerder'         => 'boolean',
             'beheerafspraak.voert_controles_uit'  => 'boolean',
             'beheerafspraak.beheert_in_hartslagnu' => 'boolean',
             'beheerafspraak.extern_onderhoud'     => 'boolean',
-            'cooperation_agreement'             => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,txt|max:10240',
+
+            // Single AED photo upload
+            'foto' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+
+            'cooperation_agreement' => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,txt|max:10240',
         ]);
 
+        // Persist scalar columns
         $aed->update($validated);
 
-        // Replace optional cooperation agreement upload
+        // Replace cooperation agreement upload (optional)
         if ($request->hasFile('cooperation_agreement')) {
             $path = $request->file('cooperation_agreement')->store('aed-cooperation-agreements', 'public');
             $aed->update([
                 'cooperation_agreement_path' => $path,
+            ]);
+        }
+
+        // Foto upload/replace/remove via AedPhoto (meerdere foto's mogelijk)
+        // 1) Remove existing photo(s)
+        if ($request->boolean('remove_photo')) {
+            $disk = Storage::disk('public');
+
+            foreach ($aed->photos as $existingPhoto) {
+                if (!empty($existingPhoto->path)) {
+                    $disk->delete($existingPhoto->path);
+                }
+            }
+
+            $aed->photos()->delete();
+        }
+
+        // 2) Upload/replace new photo (if provided)
+        if ($request->hasFile('foto')) {
+            $disk = Storage::disk('public');
+
+            // Upload nieuwe foto(s); als je remove_photo eerder koos, wordt er al gewist.
+            // Als je alleen vervangt zonder remove_photo, vervangen we door te wissen en opnieuw te maken.
+            if (!$request->boolean('remove_photo')) {
+                foreach ($aed->photos as $existingPhoto) {
+                    if (!empty($existingPhoto->path)) {
+                        $disk->delete($existingPhoto->path);
+                    }
+                }
+                $aed->photos()->delete();
+            }
+
+            $path = $request->file('foto')->store('aed-photos', 'public');
+
+            $aed->photos()->create([
+                'path' => $path,
             ]);
         }
 
@@ -99,7 +139,6 @@ class AedController extends Controller
      * Display a listing of archived AEDs.
      */
     public function archief()
-
     {
         $aeds = Aed::where('status', 'archief')->get();
         return view('aeds.archief', compact('aeds'));
@@ -137,12 +176,17 @@ class AedController extends Controller
             'lokaal_contactpersoon'  => 'nullable|string|max:255',
             'opmerkingen'            => 'nullable|string',
             'status'                 => 'required|in:actief,inactief,vervangen,archief',
+
             'beheerafspraak'         => 'nullable|array',
             'beheerafspraak.is_beheerder'         => 'boolean',
             'beheerafspraak.voert_controles_uit'  => 'boolean',
             'beheerafspraak.beheert_in_hartslagnu' => 'boolean',
             'beheerafspraak.extern_onderhoud'     => 'boolean',
-            'cooperation_agreement'             => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,txt|max:10240',
+
+            // Single AED photo upload
+            'foto' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+
+            'cooperation_agreement' => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,txt|max:10240',
         ]);
 
         $aed = Aed::create($validated);
@@ -152,6 +196,14 @@ class AedController extends Controller
             $path = $request->file('cooperation_agreement')->store('aed-cooperation-agreements', 'public');
             $aed->update([
                 'cooperation_agreement_path' => $path,
+            ]);
+        }
+
+        // Store optional photo upload
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('aed-photos', 'public');
+            $aed->update([
+                'photo_path' => $path,
             ]);
         }
 
@@ -200,7 +252,6 @@ class AedController extends Controller
      */
     public function controleStore(Request $request, Aed $aed)
     {
-
         logger()->warning('controleStore called', [
             'aed_id' => $aed->id,
             'user_id' => $request->user()?->id,
@@ -254,10 +305,6 @@ class AedController extends Controller
             'bijzonderheden' => $validated['bijzonderheden'] ?? null,
         ]);
 
-        // Belangrijk: storing mag niet blijven hangen op een oude controle.
-        // Als de storing-checkbox niet is aangezet, sla dan storing=false op in de nieuwe log.
-        // (request->boolean('storing') levert false als de checkbox ontbreekt)
-
         // Create Notifications (simple admin alerts)
         if ($updateBatterij) {
             Notification::create([
@@ -281,8 +328,6 @@ class AedController extends Controller
 
         return redirect()->route('aeds.show', $aed)->with('success', 'Controle succesvol opgeslagen en gelogd!');
     }
-
-
 
     /**
      * Archive the specified AED (soft-remove from active list).
@@ -331,14 +376,12 @@ class AedController extends Controller
     {
         abort_unless($aed->cooperation_agreement_path, 404);
 
-
         $path = $aed->cooperation_agreement_path;
         $absolutePath = Storage::disk('public')->path($path);
 
         return response()->file($absolutePath, [
-            'Content-Disposition' => 'inline; filename="'.basename($absolutePath).'"',
+            'Content-Disposition' => 'inline; filename="' . basename($absolutePath) . '"',
         ]);
     }
 }
-
 
