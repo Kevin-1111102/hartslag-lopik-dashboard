@@ -247,7 +247,7 @@ Dit project is ontwikkeld als afstudeerstage-opdracht. Onderstaande afspraken zi
 
 ### Noodprocedure bij uitval
 
-Als de applicatie tijdelijk niet beschikbaar is, kan teruggevallen worden op een CSV-export van de AED-gegevens. Deze export is beschikbaar via het menu **Instellingen → Exporteren** in de applicatie.
+Als de applicatie tijdelijk niet beschikbaar is, kan teruggevallen worden op een CSV-export van de AED-gegevens. Deze export is beschikbaarop de aed scherm  in de applicatie.
 
 ---
 
