@@ -12,18 +12,96 @@ Route::get('/', function () {
 use App\Models\Notification;
 
 Route::get('/dashboard', function () {
-    $recentUnread = null;
+    $unreadNotifications = Notification::query()
+        ->where('gelezen', false)
+        ->orderByDesc('created_at')
+        ->orderByDesc('id')
+        ->get();
 
-    if (auth()->check() && auth()->user()?->is_admin) {
-        $recentUnread = Notification::query()
-            ->where('gelezen', false)
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->first();
-    }
+    $now = now();
+    $warningDays = 60;
 
-    return view('dashboard', compact('recentUnread'));
+    // Voor AED "actie vereist" (historisch): batterij/elektroden binnen warningDays
+    $aedsActieVereist = \App\Models\Aed::query()
+        ->where('status', '!=', 'archief')
+        ->where(function ($q) use ($now, $warningDays) {
+            $q->where(function ($q1) use ($now, $warningDays) {
+                    $q1->whereNotNull('batterij_vervaldatum')
+                        ->where('batterij_vervaldatum', '<=', $now->copy()->addDays($warningDays));
+                })
+                ->orWhere(function ($q2) use ($now, $warningDays) {
+                    $q2->whereNotNull('elektroden_vervaldatum')
+                        ->where('elektroden_vervaldatum', '<=', $now->copy()->addDays($warningDays));
+                });
+        })
+        ->get();
+
+    // Elektroden / batterij groepen op basis van days-logic uit aed/show:
+    // expired: days < 0  => vervaldatum < now
+    // warning: days 0..60 => vervaldatum <= now+60
+    // goed: days > 60 of NULL
+
+    $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
+
+    // BATTERIJ
+    $batterijExpired = (clone $aeds)
+        ->whereNotNull('batterij_vervaldatum')
+        ->where('batterij_vervaldatum', '<', $now)
+        ->get();
+
+    $batterijWarning = (clone $aeds)
+        ->whereNotNull('batterij_vervaldatum')
+        ->where('batterij_vervaldatum', '>=', $now)
+        ->where('batterij_vervaldatum', '<=', $now->copy()->addDays($warningDays))
+        ->get();
+
+    $batterijGoed = (clone $aeds)
+        ->where(function ($q) use ($now, $warningDays) {
+            $q->whereNull('batterij_vervaldatum')
+                ->orWhere('batterij_vervaldatum', '>', $now->copy()->addDays($warningDays));
+        })
+        ->get();
+
+    // ELEKTRODEN
+    $elektrodenExpired = (clone $aeds)
+        ->whereNotNull('elektroden_vervaldatum')
+        ->where('elektroden_vervaldatum', '<', $now)
+        ->get();
+
+    $elektrodenWarning = (clone $aeds)
+        ->whereNotNull('elektroden_vervaldatum')
+        ->where('elektroden_vervaldatum', '>=', $now)
+        ->where('elektroden_vervaldatum', '<=', $now->copy()->addDays($warningDays))
+        ->get();
+
+    $elektrodenGoed = (clone $aeds)
+        ->where(function ($q) use ($now, $warningDays) {
+            $q->whereNull('elektroden_vervaldatum')
+                ->orWhere('elektroden_vervaldatum', '>', $now->copy()->addDays($warningDays));
+        })
+        ->get();
+
+    // Recente unread melding (batterij/elektroden)
+    $recentUnread = \App\Models\Notification::query()
+        ->where('gelezen', false)
+        ->orderByDesc('created_at')
+        ->orderByDesc('id')
+        ->first();
+
+    return view('dashboard', compact(
+        'unreadNotifications',
+        'aedsActieVereist',
+        'recentUnread',
+        'batterijExpired',
+        'batterijWarning',
+        'batterijGoed',
+        'elektrodenExpired',
+        'elektrodenWarning',
+        'elektrodenGoed'
+    ));
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+
 
 // AED routes
 Route::resource('aeds', AedController::class)

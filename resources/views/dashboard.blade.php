@@ -55,13 +55,158 @@
                 </div>
             @endif
 
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="text-muted">
-                        Welkom op je dashboard.
+            {{-- ELEKTRODEN/BATTERIJ STATUS BLOKKEN --}}
+            @php
+                $warningIcon = 'bi bi-exclamation-triangle';
+            @endphp
+
+            <div class="row g-4">
+                {{-- Batterij expired --}}
+                <div class="col-12 col-lg-4">
+                    <div class="card shadow-sm border-danger border-2 h-100">
+                        <div class="card-header bg-danger text-white fw-bold">
+                            <i class="bi bi-battery me-2"></i> BATTERIJ - VERVALLEN
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-bold">{{ $batterijExpired->count() }} AED's</div>
+                            </div>
+                            @forelse($batterijExpired as $aed)
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
+                                        AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
+                                    </a>
+                                    <span class="text-danger fw-bold">{{ optional($aed->batterij_vervaldatum)->format('Y-m-d') ?? '-' }}</span>
+                                </div>
+                            @empty
+                                <div class="text-muted">Geen AED's met vervallen batterij.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Batterij warning --}}
+                <div class="col-12 col-lg-4">
+                    <div class="card shadow-sm border-warning border-2 h-100">
+                        <div class="card-header bg-warning text-dark fw-bold">
+                            <i class="bi bi-battery-warning me-2"></i> BATTERIJ - BINNENKORT
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-bold">{{ $batterijWarning->count() }} AED's</div>
+                            </div>
+                            @forelse($batterijWarning as $aed)
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
+                                        AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
+                                    </a>
+                                    <span class="text-warning fw-bold">{{ optional($aed->batterij_vervaldatum)->format('Y-m-d') ?? '-' }}</span>
+                                </div>
+                            @empty
+                                <div class="text-muted">Geen AED's met batterij die binnen 60 dagen vervalt.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Batterij goed --}}
+                <div class="col-12 col-lg-4">
+                    <div class="card shadow-sm border-success border-2 h-100">
+                        <div class="card-header bg-success text-white fw-bold">
+                            <i class="bi bi-battery-full me-2"></i> BATTERIJ - GOED
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="fw-bold">{{ $batterijGoed->count() }} AED's</div>
+                            </div>
+                            @forelse($batterijGoed as $aed)
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
+                                        AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
+                                    </a>
+                                    <span class="text-success fw-bold">{{ optional($aed->batterij_vervaldatum)->format('Y-m-d') ?? '-' }}</span>
+                                </div>
+                            @empty
+                                <div class="text-muted">Geen AED's met batterij in goede staat.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Elektroden expired --}}
+                <div class="col-12 col-lg-4">
+                    <div class="card shadow-sm border-danger border-2 h-100">
+                        <div class="card-header bg-danger text-white fw-bold">
+                            <i class="bi bi-lightning me-2"></i> ELEKTRODEN - VERVALLEN
+                        </div>
+                        <div class="card-body">
+                            <div class="fw-bold">{{ $elektrodenExpired->count() }} AED's</div>
+                            @forelse($elektrodenExpired as $aed)
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
+                                        AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
+                                    </a>
+                                    <span class="text-danger fw-bold">{{ optional($aed->elektroden_vervaldatum)->format('Y-m-d') ?? '-' }}</span>
+                                </div>
+                            @empty
+                                <div class="text-muted">Geen AED's met vervallen elektroden.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Elektroden warning --}}
+                <div class="col-12 col-lg-4">
+                    <div class="card shadow-sm border-warning border-2 h-100">
+                        <div class="card-header bg-warning text-dark fw-bold">
+                            <i class="bi bi-lightning-charge me-2"></i> ELEKTRODEN - BINNENKORT
+                        </div>
+                        <div class="card-body">
+                            <div class="fw-bold">{{ $elektrodenWarning->count() }} AED's</div>
+                            @forelse($elektrodenWarning as $aed)
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
+                                        AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
+                                    </a>
+                                    <span class="text-warning fw-bold">{{ optional($aed->elektroden_vervaldatum)->format('Y-m-d') ?? '-' }}</span>
+                                </div>
+                            @empty
+                                <div class="text-muted">Geen AED's met elektroden die binnen 60 dagen vervalt.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Elektroden goed --}}
+                <div class="col-12 col-lg-4">
+                    <div class="card shadow-sm border-success border-2 h-100">
+                        <div class="card-header bg-success text-white fw-bold">
+                            <i class="bi bi-lightning-charge-fill me-2"></i> ELEKTRODEN - GOED
+                        </div>
+                        <div class="card-body">
+                            <div class="fw-bold">{{ $elektrodenGoed->count() }} AED's</div>
+                            @forelse($elektrodenGoed as $aed)
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
+                                        AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
+                                    </a>
+                                    <span class="text-success fw-bold">{{ optional($aed->elektroden_vervaldatum)->format('Y-m-d') ?? '-' }}</span>
+                                </div>
+                            @empty
+                                <div class="text-muted">Geen AED's met elektroden in goede staat.</div>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {{-- eventueel oude welkom text behouden? --}}
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <div class="text-muted">Controleer de statusblokken voor batterij en elektroden.</div>
+                </div>
+            </div>
+
         </div>
     </div>
 </x-app-layout>

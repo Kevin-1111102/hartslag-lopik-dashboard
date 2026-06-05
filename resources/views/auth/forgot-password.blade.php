@@ -6,6 +6,7 @@
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
     <form method="POST" action="{{ route('password.email') }}">
+
         @csrf
 
         <div>
@@ -14,7 +15,13 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="flex items-center justify-between mt-4 gap-3">
+            <a
+                href="{{ route('login') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                {{ __('Terug naar login') }}
+            </a>
+
             <x-primary-button>
                 {{ __('Stuur wachtwoord herstellink') }}
             </x-primary-button>

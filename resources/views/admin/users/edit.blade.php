@@ -47,7 +47,7 @@
                             <div>
                                 <label class="flex items-center">
                                     <input type="checkbox" name="is_admin" value="1" {{ old('is_admin', $user->is_admin) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <span class="ms-2 text-sm text-gray-900">Is Admin</span>
+                                    <span class="ms-2 text-sm text-gray-900">Is Beheerder</span>
                                 </label>
                                 <x-input-error :messages="$errors->get('is_admin')" class="mt-2" />
                             </div>
