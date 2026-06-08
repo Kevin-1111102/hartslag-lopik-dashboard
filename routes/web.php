@@ -125,6 +125,10 @@ Route::get('/aeds/{aed}/cooperation-agreement/view', [AedController::class, 'vie
     ->middleware(['auth', 'verified']);
 Route::get('/aeds/archief/overzicht', [AedController::class, 'archief'])->name('aeds.archief')->middleware(['auth', 'verified']);
 
+// Admin export (CSV voor Excel)
+Route::get('/aeds/export', [AedController::class, 'export'])->name('aeds.export')
+    ->middleware(['auth', 'verified', 'admin']);
+
 
 
 Route::middleware('auth')->group(function () {

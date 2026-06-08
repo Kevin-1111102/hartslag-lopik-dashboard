@@ -15,6 +15,248 @@ use Illuminate\Support\Facades\Storage;
 class AedController extends Controller
 {
     /**
+     * Export all AEDs (incl. archived) to an .xlsx file.
+     */
+    public function export()
+    {
+        // Ensure admin-only (route already has middleware, but keep it explicit here)
+        abort_unless(auth()->check() && auth()->user()->is_admin, 403, 'Toegang geweigerd. Alleen admins.');
+
+        $aeds = Aed::query()
+            ->with([
+                'beheerafspraak',
+                'controleLogs.user',
+                'photos',
+            ])
+            ->get();
+
+        // PhpSpreadsheet
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet->getProperties()->setCreator(auth()->user()?->name ?? 'system');
+
+        // Excel best practices: remove default sheet name issues
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('AED export');
+
+        // Eén uniforme tabel-structuur.
+        // Eén rij per (AED x controleLog) en één rij per (AED x foto).
+        // Zo blijven kolommen altijd op exact dezelfde posities.
+        $headers = [
+            'RowType',
+            'AedID',
+            'AedStatus',
+            'Eigenaar',
+            'Contactpersoon',
+            'AED Type',
+            'Serienummer',
+            'Adres',
+            'Huisnummer',
+            'Plaats',
+            'Beschrijving',
+            'Security',
+            'Pincode',
+            'Onderhoudscode',
+            'Serienummer Kast',
+            'Serienummer AED',
+            'Batterij vervaldatum',
+            'Elektroden vervaldatum',
+            'Lokaal contactpersoon',
+            'Opmerkingen',
+            'Samenwerkingsafspraak path',
+
+            // beheerafspraak
+            'Is beheerder',
+            'Voert controles uit',
+            'Beheert in hartslag nu',
+            'Extern onderhoud',
+
+            // controle log
+            'Controle datum',
+            'Controle gebruiker',
+            'Bevindingen',
+            'Opslag/ Storing',
+            'Bijzonderheden',
+
+            // foto
+            'Foto path',
+            'Foto caption',
+        ];
+
+
+        $col = 1;
+        foreach ($headers as $header) {
+            $cell = $sheet->setCellValueByColumnAndRow($col, 1, $header);
+            $sheet->getStyleByColumnAndRow($col, 1)->getFont()->setBold(true);
+            $col++;
+        }
+
+        $row = 2;
+
+        foreach ($aeds as $aed) {
+            $beheer = $aed->beheerafspraak;
+
+            $base = [
+                'aed' => $aed,
+                'beheer' => $beheer,
+            ];
+
+            // AED base row
+            $sheet->setCellValue("A{$row}", 'AED');
+            $sheet->setCellValue("B{$row}", $aed->id);
+            $sheet->setCellValue("C{$row}", (string) ($aed->status ?? ''));
+            $sheet->setCellValue("D{$row}", (string) ($aed->eigenaar ?? ''));
+            $sheet->setCellValue("E{$row}", (string) ($aed->contactpersoon ?? ''));
+            $sheet->setCellValue("F{$row}", (string) ($aed->aed_type ?? ''));
+            $sheet->setCellValue("G{$row}", (string) ($aed->serienummer ?? ''));
+            $sheet->setCellValue("H{$row}", (string) ($aed->adres ?? ''));
+            $sheet->setCellValue("I{$row}", (string) ($aed->huisnummer ?? ''));
+            $sheet->setCellValue("J{$row}", (string) ($aed->plaats ?? ''));
+            $sheet->setCellValue("K{$row}", (string) ($aed->beschrijving ?? ''));
+            $sheet->setCellValue("L{$row}", (string) ($aed->security ?? ''));
+            $sheet->setCellValue("M{$row}", (string) ($aed->pincode ?? ''));
+            $sheet->setCellValue("N{$row}", (string) ($aed->onderhoudscode ?? ''));
+            $sheet->setCellValue("O{$row}", (string) ($aed->serienummer_kast ?? ''));
+            $sheet->setCellValue("P{$row}", (string) ($aed->serienummer_aed ?? ''));
+            if (!empty($aed->batterij_vervaldatum)) {
+                $sheet->setCellValue("Q{$row}", $aed->batterij_vervaldatum->format('Y-m-d'));
+            } else {
+                $sheet->setCellValue("Q{$row}", '');
+            }
+            if (!empty($aed->elektroden_vervaldatum)) {
+                $sheet->setCellValue("R{$row}", $aed->elektroden_vervaldatum->format('Y-m-d'));
+            } else {
+                $sheet->setCellValue("R{$row}", '');
+            }
+            $sheet->setCellValue("S{$row}", (string) ($aed->lokaal_contactpersoon ?? ''));
+            $sheet->setCellValue("T{$row}", (string) ($aed->opmerkingen ?? ''));
+            $sheet->setCellValue("U{$row}", (string) ($aed->cooperation_agreement_path ?? ''));
+
+            $sheet->setCellValue("V{$row}", (string) ($beheer?->is_beheerder ? 'ja' : 'nee'));
+            $sheet->setCellValue("W{$row}", (string) ($beheer?->voert_controles_uit ? 'ja' : 'nee'));
+            $sheet->setCellValue("X{$row}", (string) ($beheer?->beheert_in_hartslagnu ? 'ja' : 'nee'));
+            $sheet->setCellValue("Y{$row}", (string) ($beheer?->extern_onderhoud ? 'ja' : 'nee'));
+
+            $row++;
+
+            // Controle logs
+            foreach ($aed->controleLogs as $log) {
+                // RowType
+                $sheet->setCellValue("A{$row}", 'Controle');
+
+                // AED basis (zelfde kolommen als header)
+                $sheet->setCellValue("B{$row}", $aed->id);
+                $sheet->setCellValue("C{$row}", (string) ($aed->status ?? ''));
+                $sheet->setCellValue("D{$row}", (string) ($aed->eigenaar ?? ''));
+                $sheet->setCellValue("E{$row}", (string) ($aed->contactpersoon ?? ''));
+                $sheet->setCellValue("F{$row}", (string) ($aed->aed_type ?? ''));
+                $sheet->setCellValue("G{$row}", (string) ($aed->serienummer ?? ''));
+                $sheet->setCellValue("H{$row}", (string) ($aed->adres ?? ''));
+                $sheet->setCellValue("I{$row}", (string) ($aed->huisnummer ?? ''));
+                $sheet->setCellValue("J{$row}", (string) ($aed->plaats ?? ''));
+                $sheet->setCellValue("K{$row}", (string) ($aed->beschrijving ?? ''));
+                $sheet->setCellValue("L{$row}", (string) ($aed->security ?? ''));
+                $sheet->setCellValue("M{$row}", (string) ($aed->pincode ?? ''));
+                $sheet->setCellValue("N{$row}", (string) ($aed->onderhoudscode ?? ''));
+                $sheet->setCellValue("O{$row}", (string) ($aed->serienummer_kast ?? ''));
+                $sheet->setCellValue("P{$row}", (string) ($aed->serienummer_aed ?? ''));
+                $sheet->setCellValue("Q{$row}", !empty($aed->batterij_vervaldatum) ? $aed->batterij_vervaldatum->format('Y-m-d') : '');
+                $sheet->setCellValue("R{$row}", !empty($aed->elektroden_vervaldatum) ? $aed->elektroden_vervaldatum->format('Y-m-d') : '');
+                $sheet->setCellValue("S{$row}", (string) ($aed->lokaal_contactpersoon ?? ''));
+                $sheet->setCellValue("T{$row}", (string) ($aed->opmerkingen ?? ''));
+                $sheet->setCellValue("U{$row}", (string) ($aed->cooperation_agreement_path ?? ''));
+
+                // beheerafspraak
+                $sheet->setCellValue("V{$row}", (string) ($beheer?->is_beheerder ? 'ja' : 'nee'));
+                $sheet->setCellValue("W{$row}", (string) ($beheer?->voert_controles_uit ? 'ja' : 'nee'));
+                $sheet->setCellValue("X{$row}", (string) ($beheer?->beheert_in_hartslagnu ? 'ja' : 'nee'));
+                $sheet->setCellValue("Y{$row}", (string) ($beheer?->extern_onderhoud ? 'ja' : 'nee'));
+
+                // controle log
+                $sheet->setCellValue("Z{$row}", !empty($log->datum) ? $log->datum->format('Y-m-d') : '');
+                $sheet->setCellValue("AA{$row}", (string) ($log->user?->name ?? ''));
+                $sheet->setCellValue("AB{$row}", (string) ($log->bevindingen ?? ''));
+                $sheet->setCellValue("AC{$row}", $log->storing === null ? '' : ($log->storing ? 'ja' : 'nee'));
+                $sheet->setCellValue("AD{$row}", (string) ($log->bijzonderheden ?? ''));
+
+                // foto columns leeg laten
+                $sheet->setCellValue("AE{$row}", '');
+                $sheet->setCellValue("AF{$row}", '');
+
+                $row++;
+            }
+
+
+            // Fotos
+            foreach ($aed->photos as $photo) {
+                // RowType
+                $sheet->setCellValue("A{$row}", 'Foto');
+
+                // AED basis
+                $sheet->setCellValue("B{$row}", $aed->id);
+                $sheet->setCellValue("C{$row}", (string) ($aed->status ?? ''));
+                $sheet->setCellValue("D{$row}", (string) ($aed->eigenaar ?? ''));
+                $sheet->setCellValue("E{$row}", (string) ($aed->contactpersoon ?? ''));
+                $sheet->setCellValue("F{$row}", (string) ($aed->aed_type ?? ''));
+                $sheet->setCellValue("G{$row}", (string) ($aed->serienummer ?? ''));
+                $sheet->setCellValue("H{$row}", (string) ($aed->adres ?? ''));
+                $sheet->setCellValue("I{$row}", (string) ($aed->huisnummer ?? ''));
+                $sheet->setCellValue("J{$row}", (string) ($aed->plaats ?? ''));
+                $sheet->setCellValue("K{$row}", (string) ($aed->beschrijving ?? ''));
+                $sheet->setCellValue("L{$row}", (string) ($aed->security ?? ''));
+                $sheet->setCellValue("M{$row}", (string) ($aed->pincode ?? ''));
+                $sheet->setCellValue("N{$row}", (string) ($aed->onderhoudscode ?? ''));
+                $sheet->setCellValue("O{$row}", (string) ($aed->serienummer_kast ?? ''));
+                $sheet->setCellValue("P{$row}", (string) ($aed->serienummer_aed ?? ''));
+                $sheet->setCellValue("Q{$row}", !empty($aed->batterij_vervaldatum) ? $aed->batterij_vervaldatum->format('Y-m-d') : '');
+                $sheet->setCellValue("R{$row}", !empty($aed->elektroden_vervaldatum) ? $aed->elektroden_vervaldatum->format('Y-m-d') : '');
+                $sheet->setCellValue("S{$row}", (string) ($aed->lokaal_contactpersoon ?? ''));
+                $sheet->setCellValue("T{$row}", (string) ($aed->opmerkingen ?? ''));
+                $sheet->setCellValue("U{$row}", (string) ($aed->cooperation_agreement_path ?? ''));
+
+                // beheerafspraak
+                $sheet->setCellValue("V{$row}", (string) ($beheer?->is_beheerder ? 'ja' : 'nee'));
+                $sheet->setCellValue("W{$row}", (string) ($beheer?->voert_controles_uit ? 'ja' : 'nee'));
+                $sheet->setCellValue("X{$row}", (string) ($beheer?->beheert_in_hartslagnu ? 'ja' : 'nee'));
+                $sheet->setCellValue("Y{$row}", (string) ($beheer?->extern_onderhoud ? 'ja' : 'nee'));
+
+                // controle log columns leeg
+                $sheet->setCellValue("Z{$row}", '');
+                $sheet->setCellValue("AA{$row}", '');
+                $sheet->setCellValue("AB{$row}", '');
+                $sheet->setCellValue("AC{$row}", '');
+                $sheet->setCellValue("AD{$row}", '');
+
+                // foto columns
+                $sheet->setCellValue("AE{$row}", (string) ($photo->path ?? ''));
+                $sheet->setCellValue("AF{$row}", (string) ($photo->caption ?? ''));
+
+                $row++;
+            }
+
+        }
+
+        // Auto size (careful performance). Minimal: set a reasonable width for first columns.
+        foreach (range(1, count($headers)) as $i) {
+            $sheet->getColumnDimensionByColumn($i)->setAutoSize(true);
+        }
+
+        // Write XLSX to output stream and force immediate download
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        $filename = 'aed-export.xlsx';
+
+        // Ensure no BOM/warnings; set headers for correct streaming.
+        return response()->stream(function () use ($writer) {
+            $writer->save('php://output');
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
+    }
+
+    /**
      * Display a listing of all active AEDs (excluding archived).
      */
     public function index()

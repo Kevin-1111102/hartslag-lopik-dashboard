@@ -70,11 +70,13 @@
                             <p class="text-muted mb-0">Zoek en beheer alle AED's in de regio</p>
                         </div>
 
-                        @can('admin')
-                            <button class="btn btn-outline-secondary" type="button">
-                                <i class="bi bi-download me-1"></i> aeds exporteren
-                            </button>
-                        @endcan
+                        @if (Auth::check() && Auth::user()->is_admin)
+                            <form method="GET" action="{{ route('aeds.export') }}" style="display:inline;">
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="bi bi-download me-1"></i> aeds exporteren
+                                </button>
+                            </form>
+                        @endif
                     </div>
 
                     @if (session('success'))
