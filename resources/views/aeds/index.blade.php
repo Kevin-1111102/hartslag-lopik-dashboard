@@ -70,13 +70,7 @@
                             <p class="text-muted mb-0">Zoek en beheer alle AED's in de regio</p>
                         </div>
 
-                        @if (Auth::check() && Auth::user()->is_admin)
-                            <form method="GET" action="{{ route('aeds.export') }}" style="display:inline;">
-                                <button class="btn btn-outline-secondary" type="submit">
-                                    <i class="bi bi-download me-1"></i> aeds exporteren
-                                </button>
-                            </form>
-                        @endif
+
                     </div>
 
                     @if (session('success'))
@@ -156,17 +150,21 @@
 
                     {{-- Bottom Buttons --}}
                     <div class="d-flex justify-content-between mt-4">
+                        <div class="d-flex gap-2">
+                            @can('admin')
+                                <a href="{{ route('aeds.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg me-1"></i> nieuwe aed aanmelden
+                                </a>
 
-                        @can('admin')
-                            <a href="{{ route('aeds.create') }}" class="btn btn-primary">
-                                <i class="bi bi-plus-lg me-1"></i> nieuwe aed aanmelden
-                            </a>
-                        @endcan
+                                <a href="{{ route('aeds.export') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-download me-1"></i> export alle AEDs
+                                </a>
+                            @endcan
+                        </div>
 
                         <a href="{{ route('aeds.archief') }}" class="btn btn-outline-dark">
                             <i class="bi bi-archive me-1"></i> archief
                         </a>
-
                     </div>
 
                 </div>

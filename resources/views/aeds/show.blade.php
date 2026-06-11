@@ -303,8 +303,12 @@
                                 </div>
                                 <div class="card-body">
                                     <p class="mb-2"><strong>Security / Toegang:</strong> {{ $aed->security ?? '-' }}</p>
-                                    <p class="mb-2"><strong>Pincode:</strong> {{ $aed->pincode ?? '-' }}</p>
-                                    <p class="mb-0"><strong>Onderhoudscode:</strong> {{ $aed->onderhoudscode ?? '-' }}</p>
+                                    @php
+                                        $pincode = \App\Support\DecryptSafe::decrypt($aed->getRawOriginal('pincode'), 'aed.pincode');
+                                        $onderhoudscode = \App\Support\DecryptSafe::decrypt($aed->getRawOriginal('onderhoudscode'), 'aed.onderhoudscode');
+                                    @endphp
+                                    <p class="mb-2"><strong>Pincode:</strong> <span class="font-mono">{{ $pincode ?? '-' }}</span></p>
+                                    <p class="mb-0"><strong>Onderhoudscode:</strong> <span class="font-mono">{{ $onderhoudscode ?? '-' }}</span></p>
                                 </div>
                             </div>
 

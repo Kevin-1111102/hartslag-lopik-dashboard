@@ -21,7 +21,6 @@ Route::get('/dashboard', function () {
     $now = now();
     $warningDays = 60;
 
-    // Voor AED "actie vereist" (historisch): batterij/elektroden binnen warningDays
     $aedsActieVereist = \App\Models\Aed::query()
         ->where('status', '!=', 'archief')
         ->where(function ($q) use ($now, $warningDays) {
@@ -36,14 +35,8 @@ Route::get('/dashboard', function () {
         })
         ->get();
 
-    // Elektroden / batterij groepen op basis van days-logic uit aed/show:
-    // expired: days < 0  => vervaldatum < now
-    // warning: days 0..60 => vervaldatum <= now+60
-    // goed: days > 60 of NULL
-
     $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
 
-    // BATTERIJ
     $batterijExpired = (clone $aeds)
         ->whereNotNull('batterij_vervaldatum')
         ->where('batterij_vervaldatum', '<', $now)
@@ -62,7 +55,6 @@ Route::get('/dashboard', function () {
         })
         ->get();
 
-    // ELEKTRODEN
     $elektrodenExpired = (clone $aeds)
         ->whereNotNull('elektroden_vervaldatum')
         ->where('elektroden_vervaldatum', '<', $now)
@@ -81,7 +73,6 @@ Route::get('/dashboard', function () {
         })
         ->get();
 
-    // Recente unread melding (batterij/elektroden)
     $recentUnread = \App\Models\Notification::query()
         ->where('gelezen', false)
         ->orderByDesc('created_at')
@@ -102,8 +93,16 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
+// Vaste AED routes BOVEN de resource, anders vangt {aed} ze af
+Route::get('/aeds/export', [AedController::class, 'exportAll'])
+    ->middleware(['auth', 'verified', 'admin'])
+    ->name('aeds.export');
 
-// AED routes
+Route::get('/aeds/archief/overzicht', [AedController::class, 'archief'])
+    ->middleware(['auth', 'verified'])
+    ->name('aeds.archief');
+
+// AED resource routes
 Route::resource('aeds', AedController::class)
     ->middleware(['auth', 'verified']);
 
@@ -113,22 +112,29 @@ Route::resource('aeds', AedController::class)
     ->middleware(['auth', 'verified', 'admin']);
 
 // Controle routes
-Route::get('/aeds/{aed}/controle', [AedController::class, 'controle'])->name('aeds.controle.show')->middleware(['auth', 'verified']);
-Route::post('/aeds/{aed}/controle', [AedController::class, 'controleStore'])->name('aeds.controle.store')->middleware(['auth', 'verified']);
-Route::get('/aeds/{aed}/controles/history', [AedController::class, 'controleHistory'])->name('aeds.controle.history')->middleware(['auth', 'verified']);
+Route::get('/aeds/{aed}/controle', [AedController::class, 'controle'])
+    ->middleware(['auth', 'verified'])
+    ->name('aeds.controle.show');
 
+Route::post('/aeds/{aed}/controle', [AedController::class, 'controleStore'])
+    ->middleware(['auth', 'verified'])
+    ->name('aeds.controle.store');
 
-Route::patch('/aeds/{aed}/archive', [AedController::class, 'archive'])->name('aeds.archive')->middleware(['auth', 'verified', 'admin']);
-Route::patch('/aeds/{aed}/unarchive', [AedController::class, 'unarchive'])->name('aeds.unarchive')->middleware(['auth', 'verified', 'admin']);
+Route::get('/aeds/{aed}/controles/history', [AedController::class, 'controleHistory'])
+    ->middleware(['auth', 'verified'])
+    ->name('aeds.controle.history');
+
+Route::patch('/aeds/{aed}/archive', [AedController::class, 'archive'])
+    ->middleware(['auth', 'verified', 'admin'])
+    ->name('aeds.archive');
+
+Route::patch('/aeds/{aed}/unarchive', [AedController::class, 'unarchive'])
+    ->middleware(['auth', 'verified', 'admin'])
+    ->name('aeds.unarchive');
+
 Route::get('/aeds/{aed}/cooperation-agreement/view', [AedController::class, 'viewCooperationAgreement'])
-    ->name('aeds.cooperation-agreement.view')
-    ->middleware(['auth', 'verified']);
-Route::get('/aeds/archief/overzicht', [AedController::class, 'archief'])->name('aeds.archief')->middleware(['auth', 'verified']);
-
-// Admin export (CSV voor Excel)
-Route::get('/aeds/export', [AedController::class, 'export'])->name('aeds.export')
-    ->middleware(['auth', 'verified', 'admin']);
-
+    ->middleware(['auth', 'verified'])
+    ->name('aeds.cooperation-agreement.view');
 
 
 Route::middleware('auth')->group(function () {
@@ -146,7 +152,6 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/users/{user}/edit', [AdminController::class, 'edit'])->name('users.edit');
     Route::patch('/users/{user}', [AdminController::class, 'update'])->name('users.update');
 
-    // Notifications
     Route::get('/notifications', [AdminController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{notification}/read', [AdminController::class, 'markNotificationRead'])->name('notifications.read');
     Route::post('/notifications/{notification}/unread', [AdminController::class, 'markNotificationUnread'])->name('notifications.unread');
