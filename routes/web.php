@@ -93,7 +93,7 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 
-// Vaste AED routes BOVEN de resource, anders vangt {aed} ze af
+
 Route::get('/aeds/export', [AedController::class, 'exportAll'])
     ->middleware(['auth', 'verified', 'admin'])
     ->name('aeds.export');
@@ -102,11 +102,22 @@ Route::get('/aeds/archief/overzicht', [AedController::class, 'archief'])
     ->middleware(['auth', 'verified'])
     ->name('aeds.archief');
 
+Route::get('/aeds/kaart', [AedController::class, 'map'])
+    ->middleware(['auth', 'verified'])
+    ->name('aeds.map');
+
+Route::get('/aeds/kaart/locations', [AedController::class, 'mapLocations'])
+    ->middleware(['auth', 'verified'])
+    ->name('aeds.map.locations');
+
+
+
+
 // AED resource routes
 Route::resource('aeds', AedController::class)
     ->middleware(['auth', 'verified']);
 
-// Admin-only: aanmaken/verwijderen AED's
+// AED admin routes 
 Route::resource('aeds', AedController::class)
     ->only(['create', 'store', 'destroy'])
     ->middleware(['auth', 'verified', 'admin']);

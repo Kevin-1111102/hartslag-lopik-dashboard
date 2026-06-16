@@ -6,6 +6,7 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     @endpush
 
+
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('AED Overzicht') }}
@@ -60,8 +61,9 @@
                     </div>
                 </div>
 
-                {{-- Desktop Layout (grid of cards) --}}
+
                 <div class="d-none d-md-block">
+
 
                     {{-- Header --}}
                     <div class="d-flex justify-content-between align-items-center mb-4">

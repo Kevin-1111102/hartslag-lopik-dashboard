@@ -17,6 +17,42 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class AedController extends Controller
 {
     /**
+     * AED map (Leaflet) - Blade view.
+     */
+    public function map()
+    {
+        return view('aeds.map');
+    }
+
+    /**
+     * AED locations endpoint for Leaflet.
+     *
+     * Returns active AEDs (status = 'actief') as JSON.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function mapLocations()
+    {
+        $aeds = Aed::query()
+            ->where('status', 'actief')
+            ->get([
+                'id',
+                'adres',
+                'huisnummer',
+                'plaats',
+                'beschrijving',
+                'aed_type',
+                'serienummer_aed',
+                'eigenaar',
+            ]);
+
+        return response()->json([
+            'count' => $aeds->count(),
+            'aeds' => $aeds,
+        ]);
+    }
+
+    /**
      * Display a listing of all active AEDs (excluding archived).
      */
     public function index()
@@ -24,6 +60,7 @@ class AedController extends Controller
         $aeds = Aed::where('status', '!=', 'archief')->get();
         return view('aeds.index', compact('aeds'));
     }
+
 
     /**
      * Show the form for editing the specified AED.
