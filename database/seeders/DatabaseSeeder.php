@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
-class DevInitialDataSeeder extends Seeder
+class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
@@ -22,7 +22,7 @@ class DevInitialDataSeeder extends Seeder
             ]
         );
 
-        // Insert 6 AED records (as requested)
+        // Insert 6 AED records 
         $aedRows = [
             [
                 'serienummer_aed' => 'D00000103225',
