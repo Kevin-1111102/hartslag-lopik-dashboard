@@ -69,9 +69,11 @@
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="fw-bold">{{ $batterijExpired->count() }} AED's</div>
+                                <a href="{{ route('dashboard.aeds.batterij-expired') }}" class="fw-bold text-decoration-none">
+                                    {{ $batterijExpired->count() }} AED's
+                                </a>
                             </div>
-                            @forelse($batterijExpired as $aed)
+                            @forelse($batterijExpired->take(5) as $aed)
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
                                         AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
@@ -93,9 +95,11 @@
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="fw-bold">{{ $batterijWarning->count() }} AED's</div>
+                                <a href="{{ route('dashboard.aeds.batterij-warning') }}" class="fw-bold text-decoration-none">
+                                    {{ $batterijWarning->count() }} AED's
+                                </a>
                             </div>
-                            @forelse($batterijWarning as $aed)
+                            @forelse($batterijWarning->take(5) as $aed)
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
                                         AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
@@ -117,9 +121,11 @@
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="fw-bold">{{ $batterijGoed->count() }} AED's</div>
+                                <a href="{{ route('dashboard.aeds.batterij-goed') }}" class="fw-bold text-decoration-none">
+                                    {{ $batterijGoed->count() }} AED's
+                                </a>
                             </div>
-                            @forelse($batterijGoed as $aed)
+                            @forelse($batterijGoed->take(5) as $aed)
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
                                         AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
@@ -140,8 +146,12 @@
                             <i class="bi bi-lightning me-2"></i> ELEKTRODEN - VERVALLEN
                         </div>
                         <div class="card-body">
-                            <div class="fw-bold">{{ $elektrodenExpired->count() }} AED's</div>
-                            @forelse($elektrodenExpired as $aed)
+                            <div class="mb-2">
+                                <a href="{{ route('dashboard.aeds.elektroden-expired') }}" class="fw-bold text-decoration-none">
+                                    {{ $elektrodenExpired->count() }} AED's
+                                </a>
+                            </div>
+                            @forelse($elektrodenExpired->take(5) as $aed)
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
                                         AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
@@ -162,8 +172,12 @@
                             <i class="bi bi-lightning-charge me-2"></i> ELEKTRODEN - BINNENKORT
                         </div>
                         <div class="card-body">
-                            <div class="fw-bold">{{ $elektrodenWarning->count() }} AED's</div>
-                            @forelse($elektrodenWarning as $aed)
+                            <div class="mb-2">
+                                <a href="{{ route('dashboard.aeds.elektroden-warning') }}" class="fw-bold text-decoration-none">
+                                    {{ $elektrodenWarning->count() }} AED's
+                                </a>
+                            </div>
+                            @forelse($elektrodenWarning->take(5) as $aed)
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
                                         AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}
@@ -184,8 +198,12 @@
                             <i class="bi bi-lightning-charge-fill me-2"></i> ELEKTRODEN - GOED
                         </div>
                         <div class="card-body">
-                            <div class="fw-bold">{{ $elektrodenGoed->count() }} AED's</div>
-                            @forelse($elektrodenGoed as $aed)
+                            <div class="mb-2">
+                                <a href="{{ route('dashboard.aeds.elektroden-goed') }}" class="fw-bold text-decoration-none">
+                                    {{ $elektrodenGoed->count() }} AED's
+                                </a>
+                            </div>
+                            @forelse($elektrodenGoed->take(5) as $aed)
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <a href="{{ route('aeds.show', $aed) }}" class="text-decoration-none">
                                         AED-{{ str_pad($aed->id, 3, '0', STR_PAD_LEFT) }}

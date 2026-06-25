@@ -16,34 +16,18 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AedController extends Controller
 {
-    /**
-     * AED map (Leaflet) - Blade view.
-     */
     public function map()
     {
         return view('aeds.map');
     }
 
-    /**
-     * AED locations endpoint for Leaflet.
-     *
-     * Returns active AEDs (status = 'actief') as JSON.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function mapLocations()
     {
         $aeds = Aed::query()
             ->where('status', 'actief')
             ->get([
-                'id',
-                'adres',
-                'huisnummer',
-                'plaats',
-                'beschrijving',
-                'aed_type',
-                'serienummer_aed',
-                'eigenaar',
+                'id', 'adres', 'huisnummer', 'plaats', 'beschrijving',
+                'aed_type', 'serienummer_aed', 'eigenaar',
             ]);
 
         return response()->json([
@@ -52,31 +36,18 @@ class AedController extends Controller
         ]);
     }
 
-    /**
-     * Display a listing of all active AEDs (excluding archived).
-     */
     public function index()
     {
         $aeds = Aed::where('status', '!=', 'archief')->get();
         return view('aeds.index', compact('aeds'));
     }
 
-
-    /**
-     * Show the form for editing the specified AED.
-     */
     public function edit(Aed $aed)
     {
         $aed->load(['beheerafspraak', 'controleLogs.user']);
-
-        return view('aeds.edit', [
-            'aed' => $aed,
-        ]);
+        return view('aeds.edit', ['aed' => $aed]);
     }
 
-    /**
-     * Update the specified AED in storage.
-     */
     public function update(UpdateAedRequest $request, Aed $aed)
     {
         $validated = $request->validated();
@@ -84,7 +55,6 @@ class AedController extends Controller
         $payload = $validated;
         unset($payload['pincode'], $payload['onderhoudscode']);
 
-        // Keep serial numbers if they were sent from the form (they are displayed on the AED page).
         if ($request->has('serienummer_aed')) {
             $payload['serienummer_aed'] = $request->input('serienummer_aed');
         }
@@ -95,86 +65,64 @@ class AedController extends Controller
         $aed->update($payload);
 
         $encryptedUpdates = [];
-
-        if (array_key_exists('pincode', $validated) && $validated['pincode'] !== null && $validated['pincode'] !== '') {
+        if (!empty($validated['pincode'] ?? null)) {
             $encryptedUpdates['pincode'] = $validated['pincode'];
         }
-        if (array_key_exists('onderhoudscode', $validated) && $validated['onderhoudscode'] !== null && $validated['onderhoudscode'] !== '') {
+        if (!empty($validated['onderhoudscode'] ?? null)) {
             $encryptedUpdates['onderhoudscode'] = $validated['onderhoudscode'];
         }
 
         if (!empty($encryptedUpdates)) {
             try {
                 foreach ($encryptedUpdates as $key => $value) {
-                    // Assign directly to avoid decrypting old encrypted values via fill().
                     $aed->{$key} = $value;
                 }
-
-                // If decrypting fails (legacy bad ciphertext), keep the update working.
                 $aed->saveQuietly();
             } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-                logger()->warning('aed.update: decrypt exception while saving encrypted fields', [
-                    'aed_id' => $aed->id,
-                    'exception' => get_class($e),
-                    'message' => $e->getMessage(),
-                ]);
-                // Intentionally swallow so the overall update succeeds.
+                logger()->warning('aed.update: decrypt exception', ['aed_id' => $aed->id]);
             }
         }
 
-        // Upload cooperation agreement (optional).
+        // Cooperation agreement
         if ($request->hasFile('cooperation_agreement')) {
             $path = $request->file('cooperation_agreement')->store('aed-cooperation-agreements', 'public');
-            $aed->update([
-                'cooperation_agreement_path' => $path,
-            ]);
+            $aed->update(['cooperation_agreement_path' => $path]);
         }
 
+        // Photos
         if ($request->boolean('remove_photo')) {
             $disk = Storage::disk('public');
-
-            foreach ($aed->photos as $existingPhoto) {
-                if (!empty($existingPhoto->path)) {
-                    $disk->delete($existingPhoto->path);
-                }
+            foreach ($aed->photos as $photo) {
+                $disk->delete($photo->path ?? '');
             }
-
             $aed->photos()->delete();
         }
 
-        // If a new photo is uploaded, replace existing ones (unless remove_photo already ran).
         if ($request->hasFile('foto')) {
             $disk = Storage::disk('public');
-
-            // If we didn't already remove photos, replace by deleting existing ones first.
             if (!$request->boolean('remove_photo')) {
-                foreach ($aed->photos as $existingPhoto) {
-                    if (!empty($existingPhoto->path)) {
-                        $disk->delete($existingPhoto->path);
-                    }
+                foreach ($aed->photos as $photo) {
+                    $disk->delete($photo->path ?? '');
                 }
                 $aed->photos()->delete();
             }
-
             $path = $request->file('foto')->store('aed-photos', 'public');
-
-            $aed->photos()->create([
-                'path' => $path,
-            ]);
+            $aed->photos()->create(['path' => $path]);
         }
 
-        // Update (or create) beheerafspraak based on the checkbox values from the form.
+        // Beheerafspraak
         $beheer = $validated['beheerafspraak'] ?? null;
         if (is_array($beheer)) {
             $aed->beheerafspraak()->updateOrCreate([], [
-                'is_beheerder' => $beheer['is_beheerder'] ?? false,
-                'voert_controles_uit' => $beheer['voert_controles_uit'] ?? false,
+                'is_beheerder'          => $beheer['is_beheerder'] ?? false,
+                'voert_controles_uit'   => $beheer['voert_controles_uit'] ?? false,
                 'beheert_in_hartslagnu' => $beheer['beheert_in_hartslagnu'] ?? false,
-                'extern_onderhoud' => $beheer['extern_onderhoud'] ?? false,
+                'extern_onderhoud'      => $beheer['extern_onderhoud'] ?? false,
             ]);
         }
 
-        return redirect()->route('aeds.show', $aed)->with('success', 'AED succesvol bijgewerkt!');
+        return redirect()->route('aeds.show', $aed)
+            ->with('success', 'AED succesvol bijgewerkt!');
     }
 
     public function archief()
@@ -183,42 +131,26 @@ class AedController extends Controller
         return view('aeds.archief', compact('aeds'));
     }
 
-    /**
-     * Show the form for creating a new AED.
-     */
     public function create()
     {
         return view('aeds.create');
     }
 
-    /**
-     * Store a newly created AED in storage.
-     */
     public function store(StoreAedRequest $request)
     {
         $validated = $request->validated();
-
-
         $aed = Aed::create($validated);
 
-        // Store optional cooperation agreement upload
         if ($request->hasFile('cooperation_agreement')) {
             $path = $request->file('cooperation_agreement')->store('aed-cooperation-agreements', 'public');
-            $aed->update([
-                'cooperation_agreement_path' => $path,
-            ]);
+            $aed->update(['cooperation_agreement_path' => $path]);
         }
 
-        // Store optional photo upload
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('aed-photos', 'public');
-            $aed->photos()->create([
-                'path' => $path,
-            ]);
+            $aed->photos()->create(['path' => $path]);
         }
 
-
-        // Create beheerafspraak if any checkbox is checked
         if (!empty($validated['beheerafspraak'])) {
             AedBeheerafspraak::create([
                 'aed_id'                => $aed->id,
@@ -229,16 +161,13 @@ class AedController extends Controller
             ]);
         }
 
-        return redirect()->route('aeds.index')->with('success', 'AED succesvol aangemaakt!');
+        return redirect()->route('aeds.index')
+            ->with('success', 'AED succesvol aangemaakt!');
     }
 
-    /**
-     * Display the specified AED with beheerafspraak and latest controle log.
-     */
     public function show(Aed $aed)
     {
         $aed->load(['beheerafspraak', 'controleLogs.user']);
-
         $latestControle = $aed->controleLogs()
             ->with('user')
             ->orderByDesc('datum')
@@ -248,68 +177,41 @@ class AedController extends Controller
         return view('aeds.show', compact('aed', 'latestControle'));
     }
 
-    /**
-     * Show controle-scherm for an AED (battery/electrodes update + full log).
-     */
     public function controle(Aed $aed)
     {
-        return view('controles.controle', [
-            'aed' => $aed,
-        ]);
+        return view('controles.controle', ['aed' => $aed]);
     }
 
-    /**
-     * Store controle data and create ControleLog.
-     */
     public function controleStore(Request $request, Aed $aed)
     {
-        if (config('app.debug')) {
-            logger()->debug('controleStore called', [
-                'aed_id' => $aed->id,
-                'user_id' => $request->user()?->id,
-                'request_id' => (string) $request->headers->get('X-Request-Id'),
-                'storing_present' => $request->has('storing'),
-                'storing_value' => $request->input('storing'),
-                'payload_datum' => $request->input('datum'),
-            ]);
-        }
-
-
         $validated = $request->validate([
             'datum' => 'required|date',
             'storing' => 'nullable|boolean',
             'bevindingen' => 'nullable|string',
             'bijzonderheden' => 'nullable|string',
-
             'update_batterij_vervaldatum' => 'nullable|boolean',
             'batterij_vervaldatum' => 'nullable|date',
-
             'update_elektroden_vervaldatum' => 'nullable|boolean',
             'elektroden_vervaldatum' => 'nullable|date',
         ]);
 
-        // Normalize checkboxes: if checkbox not present, validate returns null.
         $updateBatterij = $request->boolean('update_batterij_vervaldatum');
         $updateElektroden = $request->boolean('update_elektroden_vervaldatum');
 
         if ($updateBatterij && empty($validated['batterij_vervaldatum'])) {
             return back()->withErrors(['batterij_vervaldatum' => 'Vul de nieuwe batterij vervaldatum in.'])->withInput();
         }
-
         if ($updateElektroden && empty($validated['elektroden_vervaldatum'])) {
             return back()->withErrors(['elektroden_vervaldatum' => 'Vul de nieuwe elektroden vervaldatum in.'])->withInput();
         }
 
-        // Update AED dates conditionally
         if ($updateBatterij) {
             $aed->update(['batterij_vervaldatum' => $validated['batterij_vervaldatum']]);
         }
-
         if ($updateElektroden) {
             $aed->update(['elektroden_vervaldatum' => $validated['elektroden_vervaldatum']]);
         }
 
-        // Create ControleLog
         ControleLog::create([
             'aed_id' => $aed->id,
             'user_id' => $request->user()->id,
@@ -319,7 +221,6 @@ class AedController extends Controller
             'bijzonderheden' => $validated['bijzonderheden'] ?? null,
         ]);
 
-        // Create Notifications (simple admin alerts)
         if ($updateBatterij) {
             Notification::create([
                 'type' => 'batterij',
@@ -329,7 +230,6 @@ class AedController extends Controller
                 'gelezen' => false,
             ]);
         }
-
         if ($updateElektroden) {
             Notification::create([
                 'type' => 'elektroden',
@@ -340,88 +240,71 @@ class AedController extends Controller
             ]);
         }
 
-        return redirect()->route('aeds.show', $aed)->with('success', 'Controle succesvol opgeslagen en gelogd!');
+        return redirect()->route('aeds.show', $aed)
+            ->with('success', 'Controle succesvol opgeslagen en gelogd!');
     }
 
-    /**
-     * Archive the specified AED (soft-remove from active list).
-     */
     public function archive(Aed $aed)
     {
         $aed->update(['status' => 'archief']);
-
         return redirect()->route('aeds.index')->with('success', 'AED is gearchiveerd.');
     }
 
-    /**
-     * Unarchive the specified AED (reactivate).
-     */
     public function unarchive(Aed $aed)
     {
         $aed->update(['status' => 'actief']);
-
-        return redirect()->route('aeds.archief')->with('success', 'AED succesvol gede-archiveerd en reactief gemaakt.');
+        return redirect()->route('aeds.archief')->with('success', 'AED succesvol gede-archiveerd.');
     }
 
-    /**
-     * Permanently delete the specified AED.
-     */
     public function destroy(Aed $aed)
     {
         $aed->delete();
-
         return redirect()->route('aeds.archief')->with('success', 'AED permanent verwijderd.');
     }
 
     public function controleHistory(Aed $aed)
     {
         $aed->load(['beheerafspraak', 'controleLogs.user']);
-
-        $logs = $aed->controleLogs()
-            ->with('user')
-            ->orderByDesc('datum')
-            ->orderByDesc('id')
-            ->get();
-
+        $logs = $aed->controleLogs()->with('user')->orderByDesc('datum')->orderByDesc('id')->get();
         return view('controles.history', compact('aed', 'logs'));
     }
 
     public function viewCooperationAgreement(Aed $aed)
     {
         abort_unless($aed->cooperation_agreement_path, 404);
-
-        $path = $aed->cooperation_agreement_path;
-        $absolutePath = Storage::disk('public')->path($path);
-
-        return response()->file($absolutePath, [
-            'Content-Disposition' => 'inline; filename="' . basename($absolutePath) . '"',
+        $path = Storage::disk('public')->path($aed->cooperation_agreement_path);
+        return response()->file($path, [
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
         ]);
     }
 
-    /**
-     * Download JSON export of all AED data (including archived).
-     * Admin-only (because it includes decrypted pincode/onderhoudscode).
-     */
+    // ==================== EXPORT ====================
+
     public function exportAll()
     {
         $this->authorize('admin');
+        return $this->exportSpreadsheet($this->buildExportPayloadAll());
+    }
 
+    public function exportOne(Aed $aed)
+    {
+        $this->authorize('admin');
+        return $this->exportSpreadsheet($this->buildExportPayloadOne($aed));
+    }
+
+    private function buildExportPayloadAll(): array
+    {
         $aeds = Aed::with(['beheerafspraak', 'controleLogs.user', 'photos'])
             ->orderByDesc('id')
             ->get();
 
-        // Load notifications so we can export "iets vervangen" per controle moment.
-        // ControleStore creates notifications with types:
-        // - batterij
-        // - elektroden
-        $aedIds = $aeds->pluck('id')->values()->all();
+        $aedIds = $aeds->pluck('id')->all();
+
         $notificationsByAedAndDate = collect();
         if (!empty($aedIds)) {
             $notifications = Notification::whereIn('aed_id', $aedIds)
                 ->get()
-                ->groupBy(function ($n) {
-                    return $n->aed_id . '|' . ($n->datum?->format('Y-m-d') ?? '');
-                });
+                ->groupBy(fn($n) => $n->aed_id . '|' . ($n->datum?->format('Y-m-d') ?? ''));
 
             $notificationsByAedAndDate = $notifications;
         }
@@ -430,119 +313,123 @@ class AedController extends Controller
             'exported_at' => now()->toIso8601String(),
             'count' => $aeds->count(),
             'aeds' => [],
+            '_notificationsByAedAndDate' => $notificationsByAedAndDate,
         ];
 
         foreach ($aeds as $aed) {
-            $export['aeds'][] = [
-                'id' => $aed->id,
-                'eigenaar' => $aed->eigenaar,
-                'contactpersoon' => $aed->contactpersoon,
-                'aed_type' => $aed->aed_type,
-                'serienummer' => $aed->serienummer,
-                'serienummer_aed' => $aed->serienummer_aed,
-                'serienummer_kast' => $aed->serienummer_kast,
-                'adres' => $aed->adres,
-                'huisnummer' => $aed->huisnummer,
-                'plaats' => $aed->plaats,
-                'beschrijving' => $aed->beschrijving,
-                'security' => $aed->security,
-
-                // Decrypt directly to avoid touching encrypted casts via the model.
-                'pincode' => \App\Support\DecryptSafe::decrypt($aed->getRawOriginal('pincode'), 'aed.pincode'),
-                'onderhoudscode' => \App\Support\DecryptSafe::decrypt($aed->getRawOriginal('onderhoudscode'), 'aed.onderhoudscode'),
-
-                'lokaal_contactpersoon' => $aed->lokaal_contactpersoon,
-                'opmerkingen' => $aed->opmerkingen,
-                'cooperation_agreement_path' => $aed->cooperation_agreement_path,
-                'status' => $aed->status,
-
-                'batterij_vervaldatum' => $aed->batterij_vervaldatum?->format('Y-m-d'),
-                'elektroden_vervaldatum' => $aed->elektroden_vervaldatum?->format('Y-m-d'),
-
-                'beheerafspraak' => $aed->beheerafspraak ? [
-                    'is_beheerder' => (bool) $aed->beheerafspraak->is_beheerder,
-                    'voert_controles_uit' => (bool) $aed->beheerafspraak->voert_controles_uit,
-                    'beheert_in_hartslagnu' => (bool) $aed->beheerafspraak->beheert_in_hartslagnu,
-                    'extern_onderhoud' => (bool) $aed->beheerafspraak->extern_onderhoud,
-                ] : null,
-
-                'photos' => $aed->photos->map(function ($photo) {
-                    return [
-                        'id' => $photo->id,
-                        'path' => $photo->path,
-                        'caption' => $photo->caption,
-                    ];
-                })->values()->all(),
-
-                'controleLogs' => $aed->controleLogs->map(function ($log) {
-                    return [
-                        'id' => $log->id,
-                        'user' => [
-                            'id' => $log->user?->id,
-                            'name' => $log->user?->name,
-                            'email' => $log->user?->email,
-                        ],
-                        'datum' => $log->datum?->format('Y-m-d'),
-                        'bevindingen' => $log->bevindingen,
-                        'storing' => (bool) $log->storing,
-                        'bijzonderheden' => $log->bijzonderheden,
-                    ];
-                })->values()->all(),
-            ];
+            $export['aeds'][] = $this->buildAedExportArray($aed);
         }
 
-        // Export als echte Excel (.xlsx)
-        $filename = 'aed-export-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        return $export;
+    }
 
-        // Kolommen voor AEDs (flat).
+    private function buildExportPayloadOne(Aed $aed): array
+    {
+        $aed->load(['beheerafspraak', 'controleLogs.user', 'photos']);
+
+        $notifications = Notification::where('aed_id', $aed->id)
+            ->get()
+            ->groupBy(fn($n) => $n->aed_id . '|' . ($n->datum?->format('Y-m-d') ?? ''));
+
+        $export = [
+            'exported_at' => now()->toIso8601String(),
+            'count' => 1,
+            'aeds' => [],
+            '_notificationsByAedAndDate' => $notifications,
+        ];
+
+        $export['aeds'][] = $this->buildAedExportArray($aed);
+
+        return $export;
+    }
+
+    private function buildAedExportArray(Aed $aed): array
+    {
+        return [
+            'id' => $aed->id,
+            'status' => $aed->status,
+            'eigenaar' => $aed->eigenaar,
+            'contactpersoon' => $aed->contactpersoon,
+            'aed_type' => $aed->aed_type,
+            'serienummer' => $aed->serienummer,
+            'serienummer_aed' => $aed->serienummer_aed,
+            'serienummer_kast' => $aed->serienummer_kast,
+            'adres' => $aed->adres,
+            'huisnummer' => $aed->huisnummer,
+            'plaats' => $aed->plaats,
+            'beschrijving' => $aed->beschrijving,
+            'security' => $aed->security,
+
+            'pincode' => \App\Support\DecryptSafe::decrypt($aed->getRawOriginal('pincode'), 'aed.pincode'),
+            'onderhoudscode' => \App\Support\DecryptSafe::decrypt($aed->getRawOriginal('onderhoudscode'), 'aed.onderhoudscode'),
+
+            'lokaal_contactpersoon' => $aed->lokaal_contactpersoon,
+            'opmerkingen' => $aed->opmerkingen,
+            'cooperation_agreement_path' => $aed->cooperation_agreement_path,
+
+            'batterij_vervaldatum' => $aed->batterij_vervaldatum?->format('Y-m-d'),
+            'elektroden_vervaldatum' => $aed->elektroden_vervaldatum?->format('Y-m-d'),
+
+            'beheerafspraak' => $aed->beheerafspraak ? [
+                'is_beheerder'          => (bool) $aed->beheerafspraak->is_beheerder,
+                'voert_controles_uit'   => (bool) $aed->beheerafspraak->voert_controles_uit,
+                'beheert_in_hartslagnu' => (bool) $aed->beheerafspraak->beheert_in_hartslagnu,
+                'extern_onderhoud'      => (bool) $aed->beheerafspraak->extern_onderhoud,
+            ] : null,
+
+            'photos' => $aed->photos->map(fn($photo) => [
+                'id' => $photo->id,
+                'path' => $photo->path,
+                'caption' => $photo->caption,
+            ])->values()->all(),
+
+            'controleLogs' => $aed->controleLogs->map(fn($log) => [
+                'id' => $log->id,
+                'user' => [
+                    'id' => $log->user?->id,
+                    'name' => $log->user?->name,
+                    'email' => $log->user?->email,
+                ],
+                'datum' => $log->datum?->format('Y-m-d'),
+                'bevindingen' => $log->bevindingen,
+                'storing' => (bool) $log->storing,
+                'bijzonderheden' => $log->bijzonderheden,
+            ])->values()->all(),
+        ];
+    }
+
+    private function exportSpreadsheet(array $exportPayload)
+    {
+        $export = $exportPayload;
+        $notificationsByAedAndDate = $exportPayload['_notificationsByAedAndDate'] ?? collect();
+
+        $aedCount = $export['count'] ?? count($export['aeds'] ?? []);
+
+        $filename = $aedCount > 1
+            ? 'aed-export-' . now()->format('Y-m-d_H-i-s') . '.xlsx'
+            : 'aed-export-' . ($export['aeds'][0]['id'] ?? 'unknown') . '-' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
         $headers = [
-            'id',
-            'status',
-            'eigenaar',
-            'contactpersoon',
-            'aed_type',
-            'serienummer',
-            'serienummer_aed',
-            'serienummer_kast',
-            'adres',
-            'huisnummer',
-            'plaats',
-            'beschrijving',
-            'security',
-            'pincode',
-            'onderhoudscode',
-            'lokaal_contactpersoon',
-            'opmerkingen',
-            'cooperation_agreement_path',
-            'batterij_vervaldatum',
-            'elektroden_vervaldatum',
-            'is_beheerder',
-            'voert_controles_uit',
-            'beheert_in_hartslagnu',
-            'extern_onderhoud',
-            'photos_count',
-            'controleLogs_count',
+            'id','status','eigenaar','contactpersoon','aed_type','serienummer','serienummer_aed','serienummer_kast',
+            'adres','huisnummer','plaats','beschrijving','security','pincode','onderhoudscode','lokaal_contactpersoon',
+            'opmerkingen','cooperation_agreement_path','batterij_vervaldatum','elektroden_vervaldatum',
+            'is_beheerder','voert_controles_uit','beheert_in_hartslagnu','extern_onderhoud',
+            'photos_count','controleLogs_count'
         ];
 
         $spreadsheet = new Spreadsheet();
+        $columnToLetter = fn(int $col) => \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
 
-        $columnToLetter = function (int $columnIndex): string {
-            return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($columnIndex);
-        };
-
-        // Helper: write header row (Excel column letters are needed because we don't have setCellValueByColumnAndRow in this PhpSpreadsheet version).
-        $setHeaderRow = function ($worksheet, array $headers, int $rowIndex) use ($columnToLetter) {
-            $colIndex = 1;
+        $setHeaderRow = function ($sheet, array $headers, int $row) use ($columnToLetter) {
+            $col = 1;
             foreach ($headers as $header) {
-                $worksheet->setCellValue($columnToLetter($colIndex) . $rowIndex, $header);
-                $colIndex++;
+                $sheet->setCellValue($columnToLetter($col++) . $row, $header);
             }
         };
 
-        // Sheet 1: AEDs (one row per AED)
+        // === Sheet 1: AEDs ===
         $sheetAeds = $spreadsheet->getActiveSheet();
         $sheetAeds->setTitle('AEDs');
-
         $setHeaderRow($sheetAeds, $headers, 1);
 
         $rowIndex = 2;
@@ -568,73 +455,40 @@ class AedController extends Controller
                 $aed['cooperation_agreement_path'],
                 $aed['batterij_vervaldatum'],
                 $aed['elektroden_vervaldatum'],
-                (isset($aed['beheerafspraak']['is_beheerder']) ? ((int) $aed['beheerafspraak']['is_beheerder']) : null),
-                (isset($aed['beheerafspraak']['voert_controles_uit']) ? ((int) $aed['beheerafspraak']['voert_controles_uit']) : null),
-                (isset($aed['beheerafspraak']['beheert_in_hartslagnu']) ? ((int) $aed['beheerafspraak']['beheert_in_hartslagnu']) : null),
-                (isset($aed['beheerafspraak']['extern_onderhoud']) ? ((int) $aed['beheerafspraak']['extern_onderhoud']) : null),
-                is_array($aed['photos']) ? count($aed['photos']) : 0,
-                is_array($aed['controleLogs']) ? count($aed['controleLogs']) : 0,
+                $aed['beheerafspraak']['is_beheerder'] ?? null,
+                $aed['beheerafspraak']['voert_controles_uit'] ?? null,
+                $aed['beheerafspraak']['beheert_in_hartslagnu'] ?? null,
+                $aed['beheerafspraak']['extern_onderhoud'] ?? null,
+                count($aed['photos'] ?? []),
+                count($aed['controleLogs'] ?? []),
             ];
 
-            $colIndex = 1;
+            $col = 1;
             foreach ($values as $value) {
-                $sheetAeds->setCellValue($columnToLetter($colIndex) . $rowIndex, $value);
-                $colIndex++;
+                $sheetAeds->setCellValue($columnToLetter($col++) . $rowIndex, $value);
             }
-
             $rowIndex++;
         }
 
-        // Sheet 2: ControleLogs (one row per controleLog)
+        // === Sheet 2: ControleLogs ===
         $sheetLogs = $spreadsheet->createSheet();
         $sheetLogs->setTitle('ControleLogs');
 
         $logHeaders = [
-            'aed_id',
-            'aed_status',
-            'controle_id',
-            'user_id',
-            'user_name',
-            'user_email',
-            'datum',
-            'bevindingen',
-            'storing',
-            'batterij_vervangen',
-            'batterij_vervangen_datum',
-            'elektroden_vervangen',
-            'elektroden_vervangen_datum',
-            'bijzonderheden',
+            'aed_id','aed_status','controle_id','user_id','user_name','user_email','datum',
+            'bevindingen','storing','batterij_vervangen','batterij_vervangen_datum',
+            'elektroden_vervangen','elektroden_vervangen_datum','bijzonderheden'
         ];
-
         $setHeaderRow($sheetLogs, $logHeaders, 1);
 
         $logRowIndex = 2;
         foreach ($export['aeds'] as $aed) {
             foreach (($aed['controleLogs'] ?? []) as $log) {
-                $controleDate = $log['datum'] ?? null;
-                $controleDateStr = null;
-                if ($controleDate) {
-                    $controleDateStr = $controleDate instanceof \Illuminate\Support\Carbon
-                        ? $controleDate->format('Y-m-d')
-                        : (string) $controleDate;
-                }
-
-                $dateKey = $aed['id'] . '|' . ($controleDateStr ?? '');
+                $dateKey = $aed['id'] . '|' . ($log['datum'] ?? '');
                 $notifForDate = $notificationsByAedAndDate->get($dateKey) ?? collect();
 
                 $batterijNotif = $notifForDate->firstWhere('type', 'batterij');
                 $elektrodenNotif = $notifForDate->firstWhere('type', 'elektroden');
-
-                $batterijVervangen = $batterijNotif ? 1 : 0;
-                $elektrodenVervangen = $elektrodenNotif ? 1 : 0;
-
-                $batterijVervangenDatum = $batterijNotif?->datum instanceof \Illuminate\Support\Carbon
-                    ? $batterijNotif->datum->format('Y-m-d')
-                    : ($batterijNotif?->datum ? (string) $batterijNotif->datum : null);
-
-                $elektrodenVervangenDatum = $elektrodenNotif?->datum instanceof \Illuminate\Support\Carbon
-                    ? $elektrodenNotif->datum->format('Y-m-d')
-                    : ($elektrodenNotif?->datum ? (string) $elektrodenNotif->datum : null);
 
                 $values = [
                     $aed['id'],
@@ -645,25 +499,22 @@ class AedController extends Controller
                     $log['user']['email'] ?? null,
                     $log['datum'] ?? null,
                     $log['bevindingen'] ?? null,
-                    (isset($log['storing']) ? ((int) $log['storing']) : null),
-                    $batterijVervangen,
-                    $batterijVervangenDatum,
-                    $elektrodenVervangen,
-                    $elektrodenVervangenDatum,
+                    $log['storing'] ?? null,
+                    $batterijNotif ? 1 : 0,
+                    $batterijNotif?->datum?->format('Y-m-d'),
+                    $elektrodenNotif ? 1 : 0,
+                    $elektrodenNotif?->datum?->format('Y-m-d'),
                     $log['bijzonderheden'] ?? null,
                 ];
 
-                $colIndex = 1;
+                $col = 1;
                 foreach ($values as $value) {
-                    $sheetLogs->setCellValue($columnToLetter($colIndex) . $logRowIndex, $value);
-                    $colIndex++;
+                    $sheetLogs->setCellValue($columnToLetter($col++) . $logRowIndex, $value);
                 }
-
                 $logRowIndex++;
             }
         }
 
-        // Schrijf naar geheugen i.p.v. bestand
         $writer = new Xlsx($spreadsheet);
         $temp = fopen('php://temp', 'r+');
         $writer->save($temp);
@@ -677,5 +528,3 @@ class AedController extends Controller
         ]);
     }
 }
-
-

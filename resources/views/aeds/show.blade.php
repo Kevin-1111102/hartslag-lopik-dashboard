@@ -321,9 +321,9 @@
                                     <div class="card-body">
                                         <div class="d-grid gap-2">
 
-                                            <button class="btn btn-outline-secondary" type="button">
+                                            <a href="{{ route('aeds.export-one', $aed) }}" class="btn btn-outline-secondary" type="button">
                                                 <i class="bi bi-download me-2"></i>exporteren
-                                            </button>
+                                            </a>
 
                                             <a href="{{ route('aeds.edit', $aed) }}" class="btn btn-outline-secondary">
                                                 <i class="bi bi-pencil me-2"></i>bewerken

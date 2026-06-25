@@ -25,6 +25,7 @@ Route::get('/', function () {
 */
 Route::get('/dashboard', function () {
 
+
     $unreadNotifications = Notification::query()
         ->where('gelezen', false)
         ->orderByDesc('created_at')
@@ -109,12 +110,154 @@ Route::get('/dashboard', function () {
 
 /*
 |--------------------------------------------------------------------------
+| AED status overzichten (dashboard)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    Route::get('/dashboard/aeds/batterij-expired', function () {
+        $now = now();
+        $warningDays = 60;
+
+        $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
+        $list = (clone $aeds)
+            ->whereNotNull('batterij_vervaldatum')
+            ->where('batterij_vervaldatum', '<', $now)
+            ->orderBy('id')
+            ->get();
+
+        return view('aeds.status-list', [
+            'title' => 'BATTERIJ - VERVALLEN',
+            'aeds' => $list,
+            'aedDateField' => 'batterij_vervaldatum',
+            'aedDateLabel' => 'Vervaldatum batterij',
+        ])->with('dateFieldValue', function ($aed) {
+            return optional($aed->batterij_vervaldatum)->format('Y-m-d') ?? '-';
+        });
+    })->name('dashboard.aeds.batterij-expired');
+
+    Route::get('/dashboard/aeds/batterij-warning', function () {
+        $now = now();
+        $warningDays = 60;
+
+        $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
+        $list = (clone $aeds)
+            ->whereNotNull('batterij_vervaldatum')
+            ->where('batterij_vervaldatum', '>=', $now)
+            ->where('batterij_vervaldatum', '<=', $now->copy()->addDays($warningDays))
+            ->orderBy('id')
+            ->get();
+
+        return view('aeds.status-list', [
+            'title' => 'BATTERIJ - BINNENKORT',
+            'aeds' => $list,
+            'aedDateLabel' => 'Vervaldatum batterij',
+        ])->with('dateFieldValue', function ($aed) {
+            return optional($aed->batterij_vervaldatum)->format('Y-m-d') ?? '-';
+        });
+    })->name('dashboard.aeds.batterij-warning');
+
+    Route::get('/dashboard/aeds/batterij-goed', function () {
+        $now = now();
+        $warningDays = 60;
+
+        $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
+        $list = (clone $aeds)
+            ->where(function ($q) use ($now, $warningDays) {
+                $q->whereNull('batterij_vervaldatum')
+                  ->orWhere('batterij_vervaldatum', '>', $now->copy()->addDays($warningDays));
+            })
+            ->orderBy('id')
+            ->get();
+
+        return view('aeds.status-list', [
+            'title' => 'BATTERIJ - GOED',
+            'aeds' => $list,
+            'aedDateLabel' => 'Vervaldatum batterij',
+        ])->with('dateFieldValue', function ($aed) {
+            return optional($aed->batterij_vervaldatum)->format('Y-m-d') ?? '-';
+        });
+    })->name('dashboard.aeds.batterij-goed');
+
+Route::get('/dashboard/aeds/elektroden-expired', function () {
+        $now = now();
+        $warningDays = 60;
+
+        $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
+        // "Expired" = verlopen t/m vandaag (datum-only), i.p.v. strikt < now() (tijdcomponent kan AED's uitsluiten).
+        $endOfToday = $now->copy()->endOfDay();
+        $list = (clone $aeds)
+            ->whereNotNull('elektroden_vervaldatum')
+            ->where('elektroden_vervaldatum', '<=', $endOfToday)
+            ->orderBy('id')
+            ->get();
+
+
+        return view('aeds.status-list', [
+            'title' => 'ELEKTRODEN - VERVALLEN',
+            'aeds' => $list,
+            'aedDateLabel' => 'Vervaldatum elektroden',
+        ])->with('dateFieldValue', function ($aed) {
+            return optional($aed->elektroden_vervaldatum)->format('Y-m-d') ?? '-';
+        });
+    })->name('dashboard.aeds.elektroden-expired');
+
+    Route::get('/dashboard/aeds/elektroden-warning', function () {
+        $now = now();
+        $warningDays = 60;
+
+        $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
+        $list = (clone $aeds)
+            ->whereNotNull('elektroden_vervaldatum')
+            ->where('elektroden_vervaldatum', '>=', $now)
+            ->where('elektroden_vervaldatum', '<=', $now->copy()->addDays($warningDays))
+            ->orderBy('id')
+            ->get();
+
+        return view('aeds.status-list', [
+            'title' => 'ELEKTRODEN - BINNENKORT',
+            'aeds' => $list,
+            'aedDateLabel' => 'Vervaldatum elektroden',
+        ])->with('dateFieldValue', function ($aed) {
+            return optional($aed->elektroden_vervaldatum)->format('Y-m-d') ?? '-';
+        });
+    })->name('dashboard.aeds.elektroden-warning');
+
+    Route::get('/dashboard/aeds/elektroden-goed', function () {
+        $now = now();
+        $warningDays = 60;
+
+        $aeds = \App\Models\Aed::query()->where('status', '!=', 'archief');
+        $list = (clone $aeds)
+            ->where(function ($q) use ($now, $warningDays) {
+                $q->whereNull('elektroden_vervaldatum')
+                  ->orWhere('elektroden_vervaldatum', '>', $now->copy()->addDays($warningDays));
+            })
+            ->orderBy('id')
+            ->get();
+
+        return view('aeds.status-list', [
+            'title' => 'ELEKTRODEN - GOED',
+            'aeds' => $list,
+            'aedDateLabel' => 'Vervaldatum elektroden',
+        ])->with('dateFieldValue', function ($aed) {
+            return optional($aed->elektroden_vervaldatum)->format('Y-m-d') ?? '-';
+        });
+    })->name('dashboard.aeds.elektroden-goed');
+});
+
+/*
+|--------------------------------------------------------------------------
 | AED routes
 |--------------------------------------------------------------------------
 */
 Route::get('/aeds/export', [AedController::class, 'exportAll'])
     ->middleware(['auth', 'verified', 'admin'])
     ->name('aeds.export');
+
+Route::get('/aeds/{aed}/export', [AedController::class, 'exportOne'])
+    ->middleware(['auth', 'verified', 'admin'])
+    ->name('aeds.export-one');
 
 Route::get('/aeds/archief/overzicht', [AedController::class, 'archief'])
     ->middleware(['auth', 'verified'])
