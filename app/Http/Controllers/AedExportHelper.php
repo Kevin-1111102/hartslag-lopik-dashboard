@@ -10,7 +10,7 @@ use App\Support\DecryptSafe;
 class AedExportHelper
 {
     /**
-     * Build AED export payload ut for a single AED.
+     * Build AED export payload 
      */
     public static function buildPayloadForOneAed(Aed $aed): array
     {
@@ -82,7 +82,7 @@ class AedExportHelper
                     'bijzonderheden' => $log->bijzonderheden,
                 ];
             })->values()->all(),
-            // helper data
+            
             '_notificationsByAedAndDate' => $notificationsByAedAndDate,
         ];
 
