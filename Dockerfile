@@ -1,41 +1,39 @@
-# Development Dockerfile for Laravel 12
-# Runs: php artisan serve
-
 FROM php:8.2-cli
 
-# System deps
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
+    curl \
     libzip-dev \
     libonig-dev \
+    libsqlite3-dev \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
-# PHP extensions
-RUN docker-php-ext-install pdo_mysql zip mbstring
+# SQLite voor dev, MySQL voor als je later switcht
+RUN docker-php-ext-install pdo_sqlite pdo_mysql zip mbstring
 
-# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Working directory
 WORKDIR /var/www/html
 
-# Copy composer files first (better caching)
 COPY composer.json composer.lock ./
+RUN composer install --no-interaction --prefer-dist --no-scripts
 
-# Install PHP deps
-RUN composer install --no-interaction --prefer-dist
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copy the rest of the app
 COPY . .
 
-# Ensure writable dirs
-RUN mkdir -p storage/framework storage/logs \
-  && chmod -R 777 storage bootstrap/cache
+RUN composer run-script post-autoload-dump || true
 
-# Expose Laravel dev server port
+# Assets builden voor productie, of weglaten als je Vite dev server apart draait
+RUN npm run build
+
+RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
 EXPOSE 8000
 
-# Default command (can be overridden in docker-compose)
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
-
